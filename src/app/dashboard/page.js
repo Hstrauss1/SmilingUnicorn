@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -18,6 +18,21 @@ export default function DashboardPage() {
   const [selectedPack, setSelectedPack] = useState(null);
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Mock data for demonstration when database is not set up
   const loadMockData = () => {
@@ -310,21 +325,70 @@ export default function DashboardPage() {
 
           {/* Course Pack Selector (if multiple packs) */}
           {coursePacks.length > 1 && (
-            <div className="mb-6">
+            <div className="mb-6 relative w-full md:w-96" ref={dropdownRef}>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Select Learning Roadmap
               </label>
-              <select
-                value={selectedPack?.id}
-                onChange={(e) => setSelectedPack(coursePacks.find(p => p.id === e.target.value))}
-                className="w-full md:w-96 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white"
-              >
-                {coursePacks.map(pack => (
-                  <option key={pack.id} value={pack.id}>
-                    {pack.title} ({pack.progress}% complete)
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-left shadow-xs hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <div>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      {selectedPack?.title}
+                    </span>
+                    <span className="block text-xs text-gray-500 dark:text-gray-400">
+                      {selectedPack?.progress}% complete
+                    </span>
+                  </div>
+                  <svg className={`shrink-0 w-5 h-5 text-gray-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    {coursePacks.map((pack) => (
+                      <button
+                        key={pack.id}
+                        onClick={() => {
+                          setSelectedPack(pack);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b last:border-0 border-gray-100 dark:border-gray-700/50 ${
+                          selectedPack?.id === pack.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`block text-sm font-semibold ${
+                            selectedPack?.id === pack.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
+                          }`}>
+                            {pack.title}
+                          </span>
+                          {selectedPack?.id === pack.id && (
+                            <svg className="shrink-0 w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-linear-to-r from-blue-600 to-purple-600 rounded-full" 
+                              style={{ width: `${pack.progress}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right">
+                            {pack.progress}%
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
