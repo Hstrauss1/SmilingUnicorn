@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
@@ -14,16 +16,58 @@ export default function LoginPage() {
     name: ""
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+    setError("");
+
+    try {
+      if (isLogin) {
+        // Sign in with email and password
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (error) throw error;
+
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        // Sign up with email and password
+        if (formData.password !== formData.confirmPassword) {
+          setError("Passwords do not match");
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              name: formData.name,
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        // Check if email confirmation is required
+        if (data?.user?.identities?.length === 0) {
+          setError("This email is already registered. Please sign in instead.");
+          setIsLogin(true);
+        } else {
+          setError("Check your email for the confirmation link!");
+        }
+      }
+    } catch (error) {
+      setError(error.message || "An error occurred. Please try again.");
+    } finally {
       setLoading(false);
-      router.push("/dashboard");
-    }, 1500);
+    }
   };
 
   const handleChange = (e) => {
@@ -33,23 +77,41 @@ export default function LoginPage() {
     });
   };
 
-  const handleGoogleLogin = () => {
-    // Handle Google OAuth login
-    console.log("Google login");
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setError(error.message || "Failed to sign in with Google");
+    }
   };
 
-  const handleGitHubLogin = () => {
-    // Handle GitHub OAuth login
-    console.log("GitHub login");
+  const handleGitHubLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setError(error.message || "Failed to sign in with GitHub");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         {/* Logo and Back Link */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-12 h-12 bg-linear-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-2xl">LP</span>
             </div>
           </Link>
@@ -105,6 +167,13 @@ export default function LoginPage() {
               </span>
             </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+            </div>
+          )}
 
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -191,7 +260,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -212,7 +281,11 @@ export default function LoginPage() {
             <p className="text-gray-600 dark:text-gray-400">
               {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
               <button
-                onClick={() => setIsLogin(!isLogin)}
+                type="button"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError("");
+                }}
                 className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold"
               >
                 {isLogin ? "Sign Up" : "Sign In"}

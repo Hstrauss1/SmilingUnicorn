@@ -1,10 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Header() {
+  const router = useRouter();
+  const supabase = createClient();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  };
 
   return (
     <header className="fixed top-0 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-50 border-b border-gray-200 dark:border-gray-800">
@@ -34,15 +60,31 @@ export default function Header() {
             <Link href="/dashboard" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Dashboard
             </Link>
-            <Link href="/login" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Sign In
-            </Link>
-            <Link
-              href="/upload"
-              className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold hover:shadow-lg hover:scale-105 transition-all"
-            >
-              Get Started Free
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {user.email}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold hover:shadow-lg hover:scale-105 transition-all"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link href="/login" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Sign In
+                </Link>
+                <Link
+                  href="/upload"
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold hover:shadow-lg hover:scale-105 transition-all"
+                >
+                  Get Started Free
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -70,15 +112,31 @@ export default function Header() {
               <Link href="/dashboard" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 Dashboard
               </Link>
-              <Link href="/login" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                Sign In
-              </Link>
-              <Link
-                href="/upload"
-                className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold text-center"
-              >
-                Get Started Free
-              </Link>
+              {user ? (
+                <>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {user.email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold text-center"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/upload"
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold text-center"
+                  >
+                    Get Started Free
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

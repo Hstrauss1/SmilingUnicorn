@@ -1,12 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const supabase = createClient();
   const [activeTab, setActiveTab] = useState("roadmap");
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+    getUser();
+  }, [supabase]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Mock data for demonstration
   const roadmapData = {

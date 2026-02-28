@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# .md files
+QUICK_START.md
+
+SUPABASE_SETUP.md
