@@ -122,8 +122,9 @@ export default function DashboardPage() {
             setSelectedPack(packs[0]);
           }
         } catch (error) {
-          console.error('Error fetching data:', error);
-          // Use mock data if database not set up yet
+          /****
+           * Remove this later! - Raph
+           */
           loadMockData();
         }
       }
