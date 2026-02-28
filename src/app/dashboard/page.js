@@ -21,68 +21,108 @@ export default function DashboardPage() {
 
   // Mock data for demonstration when database is not set up
   const loadMockData = () => {
-    const mockCoursePack = {
-      id: 'mock-1',
-      title: "Machine Learning Fundamentals",
-      document_name: "ml-textbook.pdf",
-      progress: 35,
-      status: 'in_progress',
-      topic_sessions: [
-        {
-          id: 1,
-          title: "Introduction to Machine Learning",
-          state: "completed",
-          completion_status: "completed",
-          subskills: [
-            { name: "What is ML?", mastery: 0.9 },
-            { name: "Types of ML", mastery: 0.85 },
-            { name: "Applications", mastery: 0.95 }
-          ]
-        },
-        {
-          id: 2,
-          title: "Data Preprocessing",
-          state: "learning_session",
-          completion_status: "in_progress",
-          subskills: [
-            { name: "Data Cleaning", mastery: 0.7 },
-            { name: "Feature Scaling", mastery: 0.6 },
-            { name: "Data Transformation", mastery: 0.5 }
-          ]
-        },
-        {
-          id: 3,
-          title: "Supervised Learning",
-          state: "diagnostic",
-          completion_status: "not_started",
-          subskills: [
-            { name: "Linear Regression", mastery: 0 },
-            { name: "Classification", mastery: 0 },
-            { name: "Model Evaluation", mastery: 0 }
-          ]
-        },
-        {
-          id: 4,
-          title: "Unsupervised Learning",
-          state: "diagnostic",
-          completion_status: "not_started",
-          subskills: []
-        },
-        {
-          id: 5,
-          title: "Neural Networks",
-          state: "diagnostic",
-          completion_status: "not_started",
-          subskills: []
-        }
-      ]
-    };
+    const mockCoursePacks = [
+      {
+        id: 'mock-1',
+        title: "Machine Learning Fundamentals",
+        document_name: "ml-textbook.pdf",
+        progress: 35,
+        status: 'in_progress',
+        topic_sessions: [
+          {
+            id: 1,
+            title: "Introduction to Machine Learning",
+            state: "completed",
+            completion_status: "completed",
+            subskills: [
+              { name: "What is ML?", mastery: 0.9 },
+              { name: "Types of ML", mastery: 0.85 },
+              { name: "Applications", mastery: 0.95 }
+            ]
+          },
+          {
+            id: 2,
+            title: "Data Preprocessing",
+            state: "learning_session",
+            completion_status: "in_progress",
+            subskills: [
+              { name: "Data Cleaning", mastery: 0.7 },
+              { name: "Feature Scaling", mastery: 0.6 },
+              { name: "Data Transformation", mastery: 0.5 }
+            ]
+          },
+          {
+            id: 3,
+            title: "Supervised Learning",
+            state: "diagnostic",
+            completion_status: "not_started",
+            subskills: [
+              { name: "Linear Regression", mastery: 0 },
+              { name: "Classification", mastery: 0 },
+              { name: "Model Evaluation", mastery: 0 }
+            ]
+          },
+          {
+            id: 4,
+            title: "Unsupervised Learning",
+            state: "diagnostic",
+            completion_status: "not_started",
+            subskills: []
+          },
+          {
+            id: 5,
+            title: "Neural Networks",
+            state: "diagnostic",
+            completion_status: "not_started",
+            subskills: []
+          }
+        ]
+      },
+      {
+        id: 'mock-2',
+        title: "Web Development Bootcamp",
+        document_name: "web-dev-course.pdf",
+        progress: 10,
+        status: 'in_progress',
+        topic_sessions: [
+          {
+            id: 6,
+            title: "HTML & CSS Basics",
+            state: "completed",
+            completion_status: "completed",
+            subskills: [
+              { name: "HTML Tags", mastery: 0.9 },
+              { name: "CSS Styling", mastery: 0.8 },
+              { name: "Flexbox", mastery: 0.85 }
+            ]
+          },
+          {
+            id: 7,
+            title: "JavaScript Fundamentals",
+            state: "learning_session",
+            completion_status: "in_progress",
+            subskills: [
+              { name: "Variables & Types", mastery: 0.6 },
+              { name: "Functions", mastery: 0.5 },
+              { name: "DOM Manipulation", mastery: 0.3 }
+            ]
+          },
+          {
+            id: 8,
+            title: "React JS",
+            state: "diagnostic",
+            completion_status: "not_started",
+            subskills: []
+          }
+        ]
+      }
+    ];
 
     const mockStats = {
-      totalCoursePacks: 1,
-      totalTopics: 5,
-      completedTopics: 1,
-      averageProgress: 35,
+      totalCoursePacks: 2,
+      totalTopics: 8,
+      completedTopics: 2,
+      averageProgress: 22,
       currentStreak: 3
     };
 
@@ -92,8 +132,8 @@ export default function DashboardPage() {
       { action: "Uploaded", item: "ml-textbook.pdf", created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() }
     ];
 
-    setCoursePacks([mockCoursePack]);
-    setSelectedPack(mockCoursePack);
+    setCoursePacks(mockCoursePacks);
+    setSelectedPack(mockCoursePacks[0]);
     setStats(mockStats);
     setRecentActivity(mockActivity);
   };
@@ -164,7 +204,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">Loading your dashboard...</p>
@@ -175,7 +215,7 @@ export default function DashboardPage() {
 
   if (!selectedPack) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
         <Header />
         <main className="pt-32 pb-20 px-6 lg:px-8">
           <div className="mx-auto max-w-7xl text-center">
@@ -189,7 +229,7 @@ export default function DashboardPage() {
               </p>
               <Link
                 href="/upload"
-                className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all"
+                className="inline-block px-8 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all"
               >
                 Upload Document
               </Link>
@@ -210,7 +250,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <Header />
       
       <main className="pt-32 pb-20 px-6 lg:px-8">
@@ -321,7 +361,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                       <div
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all"
+                        className="bg-linear-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all"
                         style={{ width: `${selectedPack.progress}%` }}
                       />
                     </div>
@@ -432,7 +472,7 @@ export default function DashboardPage() {
                   {recentActivity && recentActivity.length > 0 ? (
                     recentActivity.map((activity, index) => (
                       <div key={index} className="flex gap-3">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 shrink-0" />
                         <div className="flex-1">
                           <p className="text-sm text-gray-900 dark:text-white">
                             <span className="font-semibold">{activity.action}</span> {activity.item}
@@ -476,7 +516,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Learning Tip */}
-              <div className="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+              <div className="bg-linear-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                   💡 Learning Tip
                 </h3>
