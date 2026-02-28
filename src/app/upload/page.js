@@ -148,56 +148,6 @@ export default function UploadPage() {
                   />
                 </div>
 
-                {/* Skill Level */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Current skill level
-                  </label>
-                  <div className="grid grid-cols-3 gap-4">
-                    {["beginner", "intermediate", "advanced"].map((level) => (
-                      <button
-                        key={level}
-                        type="button"
-                        onClick={() => setSkillLevel(level)}
-                        className={`py-3 px-4 rounded-lg font-medium capitalize transition-all ${
-                          skillLevel === level
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        }`}
-                      >
-                        {level}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Time Commitment */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Time commitment
-                  </label>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[
-                      { value: "light", label: "Light", desc: "1-2 hrs/week" },
-                      { value: "moderate", label: "Moderate", desc: "3-5 hrs/week" },
-                      { value: "intensive", label: "Intensive", desc: "6+ hrs/week" }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setTimeCommitment(option.value)}
-                        className={`py-3 px-4 rounded-lg font-medium transition-all ${
-                          timeCommitment === option.value
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        }`}
-                      >
-                        <div>{option.label}</div>
-                        <div className="text-xs mt-1 opacity-75">{option.desc}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
 
