@@ -389,18 +389,25 @@ export default function DashboardPage() {
                           </div>
                           
                           <div className="mt-3">
-                            <button
-                              disabled={isLocked}
-                              className={`w-full py-2 rounded-lg font-medium transition-colors text-sm ${
-                                isLocked
-                                  ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                                  : isCompleted
-                                  ? "bg-green-600 text-white hover:bg-green-700"
-                                  : "bg-blue-600 text-white hover:bg-blue-700"
-                              }`}
-                            >
-                              {isLocked ? "🔒 Locked" : isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : "▶️ Continue Learning"}
-                            </button>
+                            {isLocked ? (
+                              <button
+                                disabled
+                                className="w-full py-2 rounded-lg font-medium transition-colors text-sm bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
+                              >
+                                🔒 Locked
+                              </button>
+                            ) : (
+                              <Link
+                                href={`/roadmap?packId=${selectedPack.id}`}
+                                className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
+                                  isCompleted
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                }`}
+                              >
+                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : "▶️ Continue Learning"}
+                              </Link>
+                            )}
                           </div>
                         </div>
                       );
