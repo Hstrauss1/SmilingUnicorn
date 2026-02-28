@@ -8,10 +8,10 @@ export default function CTA() {
           <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]"></div>
           <div className="relative z-10">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to Transform Your Learning?
+              Education is a Right, Not a Privilege
             </h2>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of learners who are already using AI to master new skills faster and more effectively.
+              Join a global movement of learners accessing free, quality education. No credit card. No barriers. Just learning.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
@@ -28,7 +28,7 @@ export default function CTA() {
               </Link>
             </div>
             <p className="text-blue-100 mt-6">
-              No credit card required • Start learning in minutes
+              100% Free • No Credit Card • Accessible to All
             </p>
           </div>
         </div>

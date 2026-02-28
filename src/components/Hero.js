@@ -14,14 +14,16 @@ export default function Hero() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">
-            Transform Your Documents into{" "}
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Personalized Learning Roadmaps
+              Accessible Education
+            </span>
+            <span>
+              {" "}for Everyone, Everywhere
             </span>
           </h1>
           
           <p className="mt-6 text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Upload any document and let our AI analyze it to create a comprehensive, structured learning path tailored to your goals. Master complex topics faster with AI-guided learning.
+            Breaking down barriers to learning. Upload any document and let our AI create free, personalized learning roadmaps. Quality education should be accessible to all, regardless of background or budget.
           </p>
           
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -41,20 +43,20 @@ export default function Hero() {
           
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">10K+</div>
-              <div className="mt-2 text-gray-600 dark:text-gray-400">Documents Processed</div>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">100%</div>
+              <div className="mt-2 text-gray-600 dark:text-gray-400">Free Forever</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-purple-600 dark:text-purple-400">5K+</div>
-              <div className="mt-2 text-gray-600 dark:text-gray-400">Active Learners</div>
+              <div className="text-4xl font-bold text-purple-600 dark:text-purple-400">10K+</div>
+              <div className="mt-2 text-gray-600 dark:text-gray-400">Students Worldwide</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">95%</div>
-              <div className="mt-2 text-gray-600 dark:text-gray-400">Satisfaction Rate</div>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">50+</div>
+              <div className="mt-2 text-gray-600 dark:text-gray-400">Languages Supported</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-purple-600 dark:text-purple-400">24/7</div>
-              <div className="mt-2 text-gray-600 dark:text-gray-400">AI Support</div>
+              <div className="mt-2 text-gray-600 dark:text-gray-400">Free Access</div>
             </div>
           </div>
         </div>

@@ -1,9 +1,9 @@
 export default function Features() {
   const features = [
     {
-      icon: "🤖",
-      title: "AI-Powered Analysis",
-      description: "Advanced AI algorithms analyze your documents to identify key concepts, topics, and learning objectives automatically."
+      icon: "🌍",
+      title: "Free for Everyone",
+      description: "No paywalls, no subscriptions. We believe quality education should be accessible to all, regardless of financial background."
     },
     {
       icon: "🗺️",
@@ -11,9 +11,9 @@ export default function Features() {
       description: "Generate personalized learning paths based on your skill level, goals, and the document content you provide."
     },
     {
-      icon: "📚",
-      title: "Multi-Format Support",
-      description: "Upload PDFs, Word documents, presentations, and more. Our AI handles various document formats seamlessly."
+      icon: "♿",
+      title: "Accessible Design",
+      description: "Built with accessibility in mind. Screen reader support, keyboard navigation, and adaptive interfaces for all learners."
     },
     {
       icon: "⚡",
@@ -21,24 +21,24 @@ export default function Features() {
       description: "Get your learning roadmap in seconds. Our optimized AI processes documents quickly without compromising quality."
     },
     {
-      icon: "🎯",
-      title: "Progress Tracking",
-      description: "Monitor your learning journey with detailed progress tracking and milestone achievements."
+      icon: "�",
+      title: "Multi-Language Support",
+      description: "Learn in your native language. Our platform supports 50+ languages to break down language barriers."
     },
     {
       icon: "🔄",
       title: "Adaptive Learning",
-      description: "Roadmaps adapt to your pace and understanding, ensuring optimal learning efficiency."
+      description: "Roadmaps adapt to your pace and understanding, ensuring optimal learning efficiency for diverse learning styles."
     },
     {
-      icon: "💡",
-      title: "Smart Recommendations",
-      description: "Get intelligent suggestions for supplementary resources and related topics to enhance learning."
+      icon: "�",
+      title: "Learn Anywhere",
+      description: "Access your learning materials on any device - desktop, tablet, or mobile. Education that fits your lifestyle."
     },
     {
-      icon: "🔒",
-      title: "Secure & Private",
-      description: "Your documents and learning data are encrypted and kept completely private and secure."
+      icon: "🤝",
+      title: "Community Driven",
+      description: "Join a global community of learners. Share resources, collaborate, and support each other's educational journey."
     }
   ];
 
@@ -47,10 +47,10 @@ export default function Features() {
       <div className="mx-auto max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Powerful Features for Effective Learning
+            Education Without Barriers
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Everything you need to transform documents into structured learning experiences
+            Empowering learners worldwide with free, accessible, and inclusive educational tools
           </p>
         </div>
 
