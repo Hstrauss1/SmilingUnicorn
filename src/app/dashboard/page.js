@@ -8,6 +8,9 @@ import { getUserCoursePacks, getUserStats, getRecentActivity } from "@/lib/supab
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
+// Import the generated JSON file
+import generatedTopicSession from "@/testPy/out/topic_session_after_learning.json";
+
 export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -36,7 +39,46 @@ export default function DashboardPage() {
 
   // Mock data for demonstration when database is not set up
   const loadMockData = () => {
+    // Transform the imported JSON to match our frontend schema format
+    const generatedTopic = {
+      id: generatedTopicSession.topic_session.topic_id,
+      title: generatedTopicSession.topic_session.title,
+      state: "learning_session", // or whatever state fits the UI best
+      completion_status: "in_progress",
+      subskills: generatedTopicSession.topic_session.subskills.map(skill => ({
+        name: skill.name,
+        mastery: skill.mastery
+      }))
+    };
+
     const mockCoursePacks = [
+      {
+        id: generatedTopicSession.course_pack_id,
+        title: "Introduction to C Programming",
+        document_name: "Class6&7-Pointers_pptx.pdf",
+        progress: 15,
+        status: 'in_progress',
+        topic_sessions: [
+          generatedTopic,
+          {
+            id: 'mock-topic-1',
+            title: "Control Structures",
+            state: "completed",
+            completion_status: "completed",
+            subskills: [
+              { name: "If/Else Statements", mastery: 0.9 },
+              { name: "For/While Loops", mastery: 0.85 }
+            ]
+          },
+          {
+            id: 'mock-topic-2',
+            title: "Arrays and Pointers",
+            state: "diagnostic",
+            completion_status: "not_started",
+            subskills: []
+          }
+        ]
+      },
       {
         id: 'mock-1',
         title: "Machine Learning Fundamentals",
@@ -134,9 +176,9 @@ export default function DashboardPage() {
     ];
 
     const mockStats = {
-      totalCoursePacks: 2,
-      totalTopics: 8,
-      completedTopics: 2,
+      totalCoursePacks: 3,
+      totalTopics: 11,
+      completedTopics: 3,
       averageProgress: 22,
       currentStreak: 3
     };
