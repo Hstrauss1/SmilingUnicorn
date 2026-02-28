@@ -1,0 +1,76 @@
+{
+  "course_pack_id": "course_41297e14",
+  "topic_session": {
+    "topic_id": "topic_001",
+    "title": "csen11",
+    "state": "diagnostic",
+    "prereq_topic_ids": [],
+    "subskills": [
+      {
+        "subskill_id": "subskill_placeholder",
+        "name": "Placeholder (replace after topic extraction)",
+        "mastery": 0.0,
+        "evidence_chunk_ids": [
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p001",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p002",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p003",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p004",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p005",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p006",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p007",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p008",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p009",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p010",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p011",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p012",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p013",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p014",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p015",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p016",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p017",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p018",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p019",
+          "course_41297e14__slides__Class5-Strings_pptx.pdf__p020"
+        ]
+      }
+    ],
+    "diagnostic": {
+      "quiz_id": "",
+      "questions": [],
+      "submission": {
+        "answers": [],
+        "score": {
+          "num_correct": 0,
+          "num_total": 0,
+          "percent": 0.0
+        },
+        "analysis": {
+          "per_question": [],
+          "weak_subskills": [],
+          "suspected_prereq_topics": []
+        }
+      }
+    },
+    "learning_session": {
+      "active_modules": []
+    },
+    "final_quiz": {
+      "quiz_id": "",
+      "questions": [],
+      "submission": {
+        "answers": [],
+        "score": {
+          "num_correct": 0,
+          "num_total": 0,
+          "percent": 0.0
+        },
+        "passed": false,
+        "weak_subskills": []
+      }
+    },
+    "completion": {
+      "status": "in_progress",
+      "completed_at": ""
+    }
+  }
+}
