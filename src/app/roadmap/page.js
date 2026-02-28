@@ -282,7 +282,7 @@ function RoadmapContent() {
                       
                       {!isLocked && (
                         <button 
-                          onClick={() => console.log('Navigate to topic session', topic.id)}
+                          onClick={() => router.push(`/topic/${topic.id}?packId=${packId}`)}
                           className={`px-6 py-2 rounded-xl font-semibold transition-colors ${
                             isCompleted 
                               ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' 
