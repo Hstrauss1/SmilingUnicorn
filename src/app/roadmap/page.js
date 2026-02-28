@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import VoiceAgent from "@/components/VoiceAgent";
 import { createClient } from "@/lib/supabase/client";
 import generatedTopicSession from "@/testPy/out/topic_session_after_learning.json";
 
@@ -330,6 +331,20 @@ function RoadmapContent() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Voice Agent - Fixed position on desktop, inline on mobile */}
+          <div className="fixed bottom-6 right-6 w-80 z-50 hidden lg:block">
+            <VoiceAgent 
+              topicContext={`Learning roadmap: ${coursePack.title}. Topics include: ${coursePack.topic_sessions.map(t => t.title).join(', ')}`} 
+            />
+          </div>
+          
+          {/* Mobile Voice Agent - Inline at bottom */}
+          <div className="lg:hidden mt-8">
+            <VoiceAgent 
+              topicContext={`Learning roadmap: ${coursePack.title}. Topics include: ${coursePack.topic_sessions.map(t => t.title).join(', ')}`} 
+            />
           </div>
         </div>
       </main>
