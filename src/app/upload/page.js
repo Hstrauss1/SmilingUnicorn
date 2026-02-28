@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 
 export default function UploadPage() {
   const router = useRouter();
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [learningGoal, setLearningGoal] = useState("");
@@ -29,20 +29,24 @@ export default function UploadPage() {
     e.stopPropagation();
     setDragActive(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
     }
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      setFiles((prev) => [...prev, ...Array.from(e.target.files)]);
     }
+  };
+
+  const removeFile = (indexToRemove) => {
+    setFiles(files.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return;
+    if (files.length === 0) return;
 
     setUploading(true);
     
@@ -87,26 +91,43 @@ export default function UploadPage() {
                 onChange={handleFileChange}
                 accept=".pdf,.doc,.docx,.ppt,.pptx,.txt"
                 className="hidden"
+                multiple
               />
               
-              {file ? (
+              {files.length > 0 ? (
                 <div className="space-y-4">
-                  <div className="text-6xl">📄</div>
-                  <div>
-                    <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {file.name}
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                  <div className="text-4xl mb-4">📄</div>
+                  <div className="text-left max-w-md mx-auto space-y-3">
+                    {files.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div className="overflow-hidden mr-4">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setFile(null)}
-                    className="text-red-600 hover:text-red-700 font-medium"
-                  >
-                    Remove File
-                  </button>
+                  <div className="pt-4">
+                    <label
+                      htmlFor="file-upload"
+                      className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                    >
+                      + Add more files
+                    </label>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -137,7 +158,7 @@ export default function UploadPage() {
                 {/* Learning Goal */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    What's your learning goal?
+                    What&apos;s your learning goal?
                   </label>
                   <textarea
                     value={learningGoal}
@@ -154,9 +175,9 @@ export default function UploadPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!file || uploading}
+              disabled={files.length === 0 || uploading}
               className={`w-full py-4 rounded-full font-semibold text-lg transition-all ${
-                !file || uploading
+                files.length === 0 || uploading
                   ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
                   : "bg-linear-to-r from-blue-600 to-purple-600 text-white hover:shadow-2xl hover:scale-105"
               }`}
