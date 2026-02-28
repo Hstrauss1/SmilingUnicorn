@@ -1,0 +1,500 @@
+{
+  "course_pack_id": "course_41297e14",
+  "topic_session": {
+    "topic_id": "intro_c_pointers",
+    "title": "Intro C: Pointers",
+    "state": "final",
+    "prereq_topic_ids": [],
+    "subskills": [
+      {
+        "subskill_id": "c_ptr_address_of",
+        "name": "Address-of operator (&) and why scanf needs it",
+        "mastery": 0.0,
+        "evidence_chunk_ids": [
+          "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p004"
+        ]
+      },
+      {
+        "subskill_id": "c_ptr_declare_types",
+        "name": "Declaring typed pointers and common declaration pitfalls",
+        "mastery": 0.0,
+        "evidence_chunk_ids": [
+          "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p006",
+          "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p009"
+        ]
+      },
+      {
+        "subskill_id": "c_ptr_assign_deref",
+        "name": "Assigning addresses to pointers and dereferencing to read/write",
+        "mastery": 0.0,
+        "evidence_chunk_ids": [
+          "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p005",
+          "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p010"
+        ]
+      },
+      {
+        "subskill_id": "c_ptr_arithmetic",
+        "name": "Pointer arithmetic and type-scaled increments",
+        "mastery": 0.0,
+        "evidence_chunk_ids": [
+          "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p015",
+          "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p016"
+        ]
+      }
+    ],
+    "diagnostic": {
+      "quiz_id": "diag_intro_c_pointers_v1",
+      "questions": [
+        {
+          "question_id": "d1",
+          "subskill_id": "c_ptr_address_of",
+          "type": "mcq",
+          "difficulty": 1,
+          "prompt": "What does the expression `&x` evaluate to?",
+          "choices": [
+            "The value stored in x",
+            "The address of x",
+            "A copy of x",
+            "The size of x"
+          ],
+          "correct_answer": "The address of x",
+          "rubric": [
+            "Identifies & as the address-of operator"
+          ]
+        },
+        {
+          "question_id": "d2",
+          "subskill_id": "c_ptr_address_of",
+          "type": "mcq",
+          "difficulty": 1,
+          "prompt": "Why does `scanf(\"%d\", &x)` use `&x`?",
+          "choices": [
+            "scanf needs the value of x to compare input",
+            "scanf needs a place in memory to store the input",
+            "scanf converts x into an integer",
+            "scanf returns the address of x"
+          ],
+          "correct_answer": "scanf needs a place in memory to store the input",
+          "rubric": [
+            "Mentions scanf writes to the address provided"
+          ]
+        },
+        {
+          "question_id": "d3",
+          "subskill_id": "c_ptr_declare_types",
+          "type": "mcq",
+          "difficulty": 1,
+          "prompt": "In `int *p, q;` what are the types of p and q?",
+          "choices": [
+            "p: int, q: int",
+            "p: int*, q: int",
+            "p: int, q: int*",
+            "p: int*, q: int*"
+          ],
+          "correct_answer": "p: int*, q: int",
+          "rubric": [
+            "Understands * binds to the declarator and does not distribute"
+          ]
+        },
+        {
+          "question_id": "d4",
+          "subskill_id": "c_ptr_declare_types",
+          "type": "mcq",
+          "difficulty": 1,
+          "prompt": "Which correctly declares both p and q as pointers to int?",
+          "choices": [
+            "int *p, q;",
+            "int *p, *q;",
+            "int p*, q*;",
+            "int *(p, q);"
+          ],
+          "correct_answer": "int *p, *q;",
+          "rubric": [
+            "Knows correct pointer declaration syntax"
+          ]
+        },
+        {
+          "question_id": "d5",
+          "subskill_id": "c_ptr_assign_deref",
+          "type": "mcq",
+          "difficulty": 2,
+          "prompt": "Given `int x = 5; int *p = &x;` what does `*p` evaluate to?",
+          "choices": [
+            "The address of x",
+            "The value of x",
+            "The size of x",
+            "An invalid value"
+          ],
+          "correct_answer": "The value of x",
+          "rubric": [
+            "Understands dereference returns the value stored at the address"
+          ]
+        },
+        {
+          "question_id": "d6",
+          "subskill_id": "c_ptr_assign_deref",
+          "type": "mcq",
+          "difficulty": 2,
+          "prompt": "Given `int x = 5; int *p = &x; *p = 10;` what is x afterward?",
+          "choices": [
+            "5",
+            "10",
+            "Undefined",
+            "Address of x"
+          ],
+          "correct_answer": "10",
+          "rubric": [
+            "Understands dereference assignment writes through the pointer"
+          ]
+        },
+        {
+          "question_id": "d7",
+          "subskill_id": "c_ptr_arithmetic",
+          "type": "mcq",
+          "difficulty": 2,
+          "prompt": "Assume sizeof(int)=4. If `int *p` holds address 1000, what address after `p++`?",
+          "choices": [
+            "1001",
+            "1002",
+            "1004",
+            "1016"
+          ],
+          "correct_answer": "1004",
+          "rubric": [
+            "Pointer arithmetic is scaled by sizeof(*p)"
+          ]
+        },
+        {
+          "question_id": "d8",
+          "subskill_id": "c_ptr_arithmetic",
+          "type": "mcq",
+          "difficulty": 2,
+          "prompt": "Which statement about pointer arithmetic is correct?",
+          "choices": [
+            "p++ always adds 1 byte",
+            "p++ adds sizeof(*p) bytes",
+            "p++ is only valid for char*",
+            "p++ changes the value stored at *p"
+          ],
+          "correct_answer": "p++ adds sizeof(*p) bytes",
+          "rubric": [
+            "Knows pointer increment moves the pointer, scaled by type"
+          ]
+        }
+      ],
+      "submission": {
+        "answers": [
+          {
+            "question_id": "d1",
+            "answer": "The address of x"
+          },
+          {
+            "question_id": "d2",
+            "answer": "scanf converts x into an integer"
+          },
+          {
+            "question_id": "d3",
+            "answer": "p: int*, q: int*"
+          },
+          {
+            "question_id": "d4",
+            "answer": "int *p, *q;"
+          },
+          {
+            "question_id": "d5",
+            "answer": "The value of x"
+          },
+          {
+            "question_id": "d6",
+            "answer": "10"
+          },
+          {
+            "question_id": "d7",
+            "answer": "1001"
+          },
+          {
+            "question_id": "d8",
+            "answer": "p++ always adds 1 byte"
+          }
+        ],
+        "score": {
+          "num_correct": 4,
+          "num_total": 8,
+          "percent": 0.5
+        },
+        "analysis": {
+          "per_question": [
+            {
+              "question_id": "d1",
+              "is_correct": true,
+              "error_type": null,
+              "confidence": 0.0,
+              "notes": ""
+            },
+            {
+              "question_id": "d2",
+              "is_correct": false,
+              "error_type": "reasoning_error",
+              "confidence": 0.6,
+              "notes": "Missed diagnostic question."
+            },
+            {
+              "question_id": "d3",
+              "is_correct": false,
+              "error_type": "reasoning_error",
+              "confidence": 0.6,
+              "notes": "Missed diagnostic question."
+            },
+            {
+              "question_id": "d4",
+              "is_correct": true,
+              "error_type": null,
+              "confidence": 0.0,
+              "notes": ""
+            },
+            {
+              "question_id": "d5",
+              "is_correct": true,
+              "error_type": null,
+              "confidence": 0.0,
+              "notes": ""
+            },
+            {
+              "question_id": "d6",
+              "is_correct": true,
+              "error_type": null,
+              "confidence": 0.0,
+              "notes": ""
+            },
+            {
+              "question_id": "d7",
+              "is_correct": false,
+              "error_type": "reasoning_error",
+              "confidence": 0.6,
+              "notes": "Missed diagnostic question."
+            },
+            {
+              "question_id": "d8",
+              "is_correct": false,
+              "error_type": "reasoning_error",
+              "confidence": 0.6,
+              "notes": "Missed diagnostic question."
+            }
+          ],
+          "weak_subskills": [
+            "c_ptr_address_of",
+            "c_ptr_arithmetic",
+            "c_ptr_declare_types"
+          ],
+          "suspected_prereq_topics": []
+        }
+      }
+    },
+    "learning_session": {
+      "active_modules": [
+        {
+          "module_id": "learn_c_ptr_arithmetic_v1",
+          "subskill_id": "c_ptr_arithmetic",
+          "title": "Fix: Pointer arithmetic and type-scaled increments",
+          "explanation": "Review the key idea for: Pointer arithmetic and type-scaled increments. Use the cited slide pages as your source of truth.",
+          "worked_example": {
+            "prompt": "",
+            "solution": ""
+          },
+          "quick_check": {
+            "question_id": "qc_c_ptr_arithmetic_1",
+            "type": "mcq",
+            "prompt": "Quick check for Pointer arithmetic and type-scaled increments: choose the best answer.",
+            "choices": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "correct_answer": "B"
+          },
+          "evidence_chunk_ids": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p015",
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p016"
+          ]
+        },
+        {
+          "module_id": "learn_c_ptr_address_of_v1",
+          "subskill_id": "c_ptr_address_of",
+          "title": "Fix: Address-of operator (&) and why scanf needs it",
+          "explanation": "Review the key idea for: Address-of operator (&) and why scanf needs it. Use the cited slide pages as your source of truth.",
+          "worked_example": {
+            "prompt": "",
+            "solution": ""
+          },
+          "quick_check": {
+            "question_id": "qc_c_ptr_address_of_1",
+            "type": "mcq",
+            "prompt": "Quick check for Address-of operator (&) and why scanf needs it: choose the best answer.",
+            "choices": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "correct_answer": "B"
+          },
+          "evidence_chunk_ids": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p004"
+          ]
+        },
+        {
+          "module_id": "learn_c_ptr_declare_types_v1",
+          "subskill_id": "c_ptr_declare_types",
+          "title": "Fix: Declaring typed pointers and common declaration pitfalls",
+          "explanation": "Review the key idea for: Declaring typed pointers and common declaration pitfalls. Use the cited slide pages as your source of truth.",
+          "worked_example": {
+            "prompt": "",
+            "solution": ""
+          },
+          "quick_check": {
+            "question_id": "qc_c_ptr_declare_types_1",
+            "type": "mcq",
+            "prompt": "Quick check for Declaring typed pointers and common declaration pitfalls: choose the best answer.",
+            "choices": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "correct_answer": "B"
+          },
+          "evidence_chunk_ids": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p006",
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p009"
+          ]
+        }
+      ]
+    },
+    "final_quiz": {
+      "quiz_id": "final_intro_c_pointers_v1",
+      "questions": [
+        {
+          "question_id": "f1",
+          "subskill_id": "c_ptr_address_of",
+          "type": "mcq",
+          "difficulty": 2,
+          "prompt": "What does `&x` evaluate to?",
+          "choices": [
+            "The value stored in x",
+            "The address of x",
+            "A copy of x",
+            "The size of x"
+          ],
+          "correct_answer": "The address of x",
+          "source_evidence": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p004"
+          ]
+        },
+        {
+          "question_id": "f2",
+          "subskill_id": "c_ptr_address_of",
+          "type": "mcq",
+          "difficulty": 2,
+          "prompt": "Which call correctly reads an int into x using scanf?",
+          "choices": [
+            "scanf(\"%d\", x)",
+            "scanf(\"%d\", &x)",
+            "scanf(\"%d\", *x)",
+            "scanf(\"%d\", &&x)"
+          ],
+          "correct_answer": "scanf(\"%d\", &x)",
+          "source_evidence": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p004"
+          ]
+        },
+        {
+          "question_id": "f3",
+          "subskill_id": "c_ptr_arithmetic",
+          "type": "mcq",
+          "difficulty": 3,
+          "prompt": "Assume sizeof(int)=4. If `int *p` holds address 1000, what address after `p++`?",
+          "choices": [
+            "1001",
+            "1002",
+            "1004",
+            "1016"
+          ],
+          "correct_answer": "1004",
+          "source_evidence": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p015",
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p016"
+          ]
+        },
+        {
+          "question_id": "f4",
+          "subskill_id": "c_ptr_arithmetic",
+          "type": "mcq",
+          "difficulty": 3,
+          "prompt": "Which statement about pointer arithmetic is correct?",
+          "choices": [
+            "p++ always adds 1 byte",
+            "p++ adds sizeof(*p) bytes",
+            "p++ changes the value stored at *p",
+            "p++ is only valid for char*"
+          ],
+          "correct_answer": "p++ adds sizeof(*p) bytes",
+          "source_evidence": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p015",
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p016"
+          ]
+        },
+        {
+          "question_id": "f5",
+          "subskill_id": "c_ptr_declare_types",
+          "type": "mcq",
+          "difficulty": 2,
+          "prompt": "In `int *p, q;` what are the types of p and q?",
+          "choices": [
+            "p: int, q: int",
+            "p: int*, q: int",
+            "p: int, q: int*",
+            "p: int*, q: int*"
+          ],
+          "correct_answer": "p: int*, q: int",
+          "source_evidence": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p006",
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p009"
+          ]
+        },
+        {
+          "question_id": "f6",
+          "subskill_id": "c_ptr_declare_types",
+          "type": "mcq",
+          "difficulty": 2,
+          "prompt": "Which correctly declares both p and q as pointers to int?",
+          "choices": [
+            "int *p, q;",
+            "int *p, *q;",
+            "int p*, q*;",
+            "int *(p, q);"
+          ],
+          "correct_answer": "int *p, *q;",
+          "source_evidence": [
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p006",
+            "course_41297e14__slides__Class6&7-Pointers_pptx.pdf__p009"
+          ]
+        }
+      ],
+      "submission": {
+        "answers": [],
+        "score": {
+          "num_correct": 0,
+          "num_total": 6,
+          "percent": 0.0
+        },
+        "passed": false,
+        "weak_subskills": []
+      }
+    },
+    "completion": {
+      "status": "in_progress",
+      "completed_at": ""
+    }
+  }
+}
