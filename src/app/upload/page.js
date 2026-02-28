@@ -1,18 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { createClient } from "@/lib/supabase/client";
 
 export default function UploadPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [files, setFiles] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [learningGoal, setLearningGoal] = useState("");
-  const [skillLevel, setSkillLevel] = useState("beginner");
-  const [timeCommitment, setTimeCommitment] = useState("moderate");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const dropdownRef = useRef(null);
+  
+  const exampleCourses = [
+    "Introduction to C Programming",
+    "Machine Learning Fundamentals",
+    "Web Development Bootcamp",
+    "Data Structures and Algorithms",
+    "Introduction to Psychology",
+    "Advanced Algorithms",
+    "Database Management Systems",
+    "Software Engineering Principles",
+    "Operating Systems"
+  ];
+  const [selectedCourse, setSelectedCourse] = useState(exampleCourses[0]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -49,12 +78,38 @@ export default function UploadPage() {
     if (files.length === 0) return;
 
     setUploading(true);
-    
-    // Simulate upload and processing
-    setTimeout(() => {
-      setUploading(false);
+    setUploadErrors([]);
+    setUploadProgress({});
+
+    const errors = [];
+
+    for (const file of files) {
+      // Sanitize the course name to be a safe folder name
+      const folderName = selectedCourse.replace(/[^a-zA-Z0-9 _\-]/g, "").trim();
+      const filePath = `${folderName}/${file.name}`;
+
+      setUploadProgress((prev) => ({ ...prev, [file.name]: "uploading" }));
+
+      const { error } = await supabase.storage
+        .from("Courses")
+        .upload(filePath, file, { upsert: true });
+
+      if (error) {
+        console.error(`Error uploading ${file.name}:`, error.message);
+        errors.push(`${file.name}: ${error.message}`);
+        setUploadProgress((prev) => ({ ...prev, [file.name]: "error" }));
+      } else {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: "done" }));
+      }
+    }
+
+    setUploading(false);
+
+    if (errors.length > 0) {
+      setUploadErrors(errors);
+    } else {
       router.push("/dashboard");
-    }, 3000);
+    }
   };
 
   return (
@@ -73,6 +128,25 @@ export default function UploadPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
+
+            {/* Upload Errors */}
+            {uploadErrors.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-xl p-4">
+                <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">Some files failed to upload:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  {uploadErrors.map((err, i) => (
+                    <li key={i} className="text-sm text-red-600 dark:text-red-400">{err}</li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => setUploadErrors([])}
+                  className="mt-3 text-xs text-red-600 dark:text-red-400 underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
             {/* File Upload Area */}
             <div
               onDragEnter={handleDrag}
@@ -106,12 +180,16 @@ export default function UploadPage() {
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             {(file.size / 1024 / 1024).toFixed(2)} MB
+                            {uploadProgress[file.name] === "uploading" && <span className="ml-2 text-blue-500">Uploading…</span>}
+                            {uploadProgress[file.name] === "done" && <span className="ml-2 text-green-500">✓ Uploaded</span>}
+                            {uploadProgress[file.name] === "error" && <span className="ml-2 text-red-500">✗ Failed</span>}
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeFile(index)}
-                          className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                          disabled={uploading}
+                          className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-40"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -148,27 +226,62 @@ export default function UploadPage() {
               )}
             </div>
 
-            {/* Learning Preferences */}
+            {/* Course Selection */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Customize Your Learning Path
+                Select a Course
               </h2>
               
               <div className="space-y-6">
-                {/* Learning Goal */}
-                <div>
+                {/* Custom Course Dropdown */}
+                <div ref={dropdownRef} className="relative w-full">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    What&apos;s your learning goal?
+                    Which course are these files for?
                   </label>
-                  <textarea
-                    value={learningGoal}
-                    onChange={(e) => setLearningGoal(e.target.value)}
-                    placeholder="e.g., Master machine learning fundamentals for my upcoming project"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    rows="3"
-                  />
-                </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-left shadow-xs hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      {selectedCourse}
+                    </span>
+                    <svg className={`shrink-0 w-5 h-5 text-gray-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
 
+                  {isDropdownOpen && (
+                    <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 custom-scrollbar">
+                      {exampleCourses.map((course) => (
+                        <button
+                          key={course}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCourse(course);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border-b last:border-0 border-gray-100 dark:border-gray-600/50 ${
+                            selectedCourse === course 
+                              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
+                              : 'text-gray-900 dark:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="block text-sm font-medium">
+                              {course}
+                            </span>
+                            {selectedCourse === course && (
+                              <svg className="shrink-0 w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -195,31 +308,6 @@ export default function UploadPage() {
               )}
             </button>
           </form>
-
-          {/* Info Cards */}
-          <div className="mt-12 grid md:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <div className="text-3xl mb-3">⚡</div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Fast Processing</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Get your roadmap in seconds, not hours
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <div className="text-3xl mb-3">🔒</div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Secure & Private</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Your documents are encrypted and never shared
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <div className="text-3xl mb-3">🎯</div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Personalized</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Tailored to your goals and skill level
-              </p>
-            </div>
-          </div>
         </div>
       </main>
 

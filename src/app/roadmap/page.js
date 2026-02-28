@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/client";
+import generatedTopicSession from "@/testPy/out/topic_session_after_learning.json";
 
 function RoadmapContent() {
   const router = useRouter();
@@ -24,62 +25,145 @@ function RoadmapContent() {
       setLoading(true);
       // Simulate API call
       setTimeout(() => {
-         const mockData = {
-          id: packId,
-          title: "Machine Learning Fundamentals",
-          document_name: "ml-textbook.pdf",
-          progress: 35,
-          status: 'in_progress',
-          topic_sessions: [
-            {
-              id: 1,
-              title: "Introduction to Machine Learning",
-              state: "completed",
-              completion_status: "completed",
-              subskills: [
-                { name: "What is ML?", mastery: 0.9 },
-                { name: "Types of ML", mastery: 0.85 },
-                { name: "Applications", mastery: 0.95 }
-              ]
-            },
-            {
-              id: 2,
-              title: "Data Preprocessing",
-              state: "learning_session",
-              completion_status: "in_progress",
-              subskills: [
-                { name: "Data Cleaning", mastery: 0.7 },
-                { name: "Feature Scaling", mastery: 0.6 },
-                { name: "Data Transformation", mastery: 0.5 }
-              ]
-            },
-            {
-              id: 3,
-              title: "Supervised Learning",
-              state: "diagnostic",
-              completion_status: "not_started",
-              subskills: [
-                { name: "Linear Regression", mastery: 0 },
-                { name: "Classification", mastery: 0 },
-                { name: "Model Evaluation", mastery: 0 }
-              ]
-            },
-            {
-              id: 4,
-              title: "Unsupervised Learning",
-              state: "diagnostic",
-              completion_status: "not_started",
-              subskills: []
-            },
-            {
-              id: 5,
-              title: "Neural Networks",
-              state: "diagnostic",
-              completion_status: "not_started",
-              subskills: []
-            }
-          ]
-        };
+        let mockData;
+
+        if (packId === generatedTopicSession.course_pack_id) {
+          const generatedTopic = {
+            id: generatedTopicSession.topic_session.topic_id,
+            title: generatedTopicSession.topic_session.title,
+            state: "learning_session",
+            completion_status: "in_progress",
+            subskills: generatedTopicSession.topic_session.subskills.map(skill => ({
+              name: skill.name,
+              mastery: skill.mastery
+            }))
+          };
+
+          mockData = {
+            id: generatedTopicSession.course_pack_id,
+            title: "Introduction to C Programming",
+            document_name: "Class6&7-Pointers_pptx.pdf",
+            progress: 15,
+            status: 'in_progress',
+            topic_sessions: [
+              generatedTopic,
+              {
+                id: 'mock-topic-1',
+                title: "Control Structures",
+                state: "completed",
+                completion_status: "completed",
+                subskills: [
+                  { name: "If/Else Statements", mastery: 0.9 },
+                  { name: "For/While Loops", mastery: 0.85 }
+                ]
+              },
+              {
+                id: 'mock-topic-2',
+                title: "Arrays and Pointers",
+                state: "diagnostic",
+                completion_status: "not_started",
+                subskills: []
+              }
+            ]
+          };
+        } else if (packId === 'mock-2') {
+          mockData = {
+            id: 'mock-2',
+            title: "Web Development Bootcamp",
+            document_name: "web-dev-course.pdf",
+            progress: 10,
+            status: 'in_progress',
+            topic_sessions: [
+              {
+                id: 6,
+                title: "HTML & CSS Basics",
+                state: "completed",
+                completion_status: "completed",
+                subskills: [
+                  { name: "HTML Tags", mastery: 0.9 },
+                  { name: "CSS Styling", mastery: 0.8 },
+                  { name: "Flexbox", mastery: 0.85 }
+                ]
+              },
+              {
+                id: 7,
+                title: "JavaScript Fundamentals",
+                state: "learning_session",
+                completion_status: "in_progress",
+                subskills: [
+                  { name: "Variables & Types", mastery: 0.6 },
+                  { name: "Functions", mastery: 0.5 },
+                  { name: "DOM Manipulation", mastery: 0.3 }
+                ]
+              },
+              {
+                id: 8,
+                title: "React JS",
+                state: "diagnostic",
+                completion_status: "not_started",
+                subskills: []
+              }
+            ]
+          };
+        } else {
+          mockData = {
+            id: packId,
+            title: "Machine Learning Fundamentals",
+            document_name: "ml-textbook.pdf",
+            progress: 35,
+            status: 'in_progress',
+            topic_sessions: [
+              {
+                id: 1,
+                title: "Introduction to Machine Learning",
+                state: "completed",
+                completion_status: "completed",
+                subskills: [
+                  { name: "What is ML?", mastery: 0.9 },
+                  { name: "Types of ML", mastery: 0.85 },
+                  { name: "Applications", mastery: 0.95 }
+                ]
+              },
+              {
+                id: 2,
+                title: "Data Preprocessing",
+                state: "learning_session",
+                completion_status: "in_progress",
+                subskills: [
+                  { name: "Data Cleaning", mastery: 0.7 },
+                  { name: "Feature Scaling", mastery: 0.6 },
+                  { name: "Data Transformation", mastery: 0.5 }
+                ]
+              },
+              {
+                id: 3,
+                title: "Supervised Learning",
+                state: "diagnostic",
+                completion_status: "not_started",
+                subskills: [
+                  { name: "Linear Regression", mastery: 0 },
+                  { name: "Classification", mastery: 0 },
+                  { name: "Model Evaluation", mastery: 0 }
+                ]
+              },
+              {
+                id: 4,
+                title: "Unsupervised Learning",
+                state: "diagnostic",
+                completion_status: "not_started",
+                subskills: []
+              },
+              {
+                id: 5,
+                title: "Neural Networks",
+                state: "diagnostic",
+                completion_status: "not_started",
+                subskills: []
+              }
+            ]
+          };
+        }
+        
         setCoursePack(mockData);
         setLoading(false);
       }, 500);
