@@ -9,7 +9,7 @@ export default function AuthCodeError() {
           Authentication Error
         </h1>
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          Sorry, we couldn't complete your sign in. Please try again.
+          Sorry, we couldn&apos;t complete your sign in. Please try again.
         </p>
         <Link
           href="/login"
