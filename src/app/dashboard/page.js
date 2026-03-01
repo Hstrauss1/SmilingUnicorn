@@ -478,7 +478,7 @@ export default function DashboardPage() {
                                     : "bg-blue-600 text-white hover:bg-blue-700"
                                 }`}
                               >
-                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Quiz" : "▶️ Start"}
+                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Assessment" : "▶️ Start"}
                               </Link>
                             )}
                           </div>

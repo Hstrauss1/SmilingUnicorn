@@ -23,6 +23,8 @@ function TopicSessionContent() {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [quizScore, setQuizScore] = useState(null);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
+  const [showRetakeDiagnostic, setShowRetakeDiagnostic] = useState(false);
+  const [isRetakingDiagnostic, setIsRetakingDiagnostic] = useState(false);
 
   useEffect(() => {
     const loadTopicData = async () => {
@@ -85,7 +87,8 @@ function TopicSessionContent() {
           } else if (topicSessionData.state === 'learning_session') {
             setCurrentView('learning');
           } else if (topicSessionData.state === 'final' || topicSessionData.state === 'final_quiz') {
-            setCurrentView('final_quiz');
+            // Re-use diagnostic quiz for final quiz
+            setCurrentView('diagnostic');
           } else {
             // Default to diagnostic if state is unclear
             setCurrentView('diagnostic');
@@ -114,89 +117,92 @@ function TopicSessionContent() {
   const handleSubmitQuiz = async () => {
     if (!topicData) return;
     
-    const questions = currentView === 'diagnostic' 
-      ? topicData.diagnostic?.questions || []
-      : topicData.final_quiz?.questions || [];
+    // Always use diagnostic questions, regardless of currentView
+    const questions = topicData.diagnostic?.questions || [];
     
     if (questions.length === 0) return;
     
-    // For diagnostic quiz, submit to API for grading and learning module generation
-    if (currentView === 'diagnostic') {
-      setSubmittingQuiz(true);
+    const isFinalQuiz = topicData.state === 'final_quiz' || topicData.state === 'final';
+    
+    // Always submit to API for grading and learning module generation
+    setSubmittingQuiz(true);
+    
+    try {
+      // Prepare answers in the format the API expects
+      const submittedAnswers = Object.entries(answers).map(([question_id, answer]) => ({
+        question_id,
+        answer
+      }));
+
+      console.log('Submitting quiz to API...', { packId, answers: submittedAnswers, isRetake: isRetakingDiagnostic });
       
-      try {
-        // Prepare answers in the format the API expects
-        const submittedAnswers = Object.entries(answers).map(([question_id, answer]) => ({
-          question_id,
-          answer
-        }));
-
-        console.log('Submitting diagnostic to API...', { packId, answers: submittedAnswers });
-        
-        // Call the submit-diagnostic API
-        const response = await fetch('/api/submit-diagnostic', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            coursePackId: packId,
-            answers: submittedAnswers
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to submit diagnostic: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log('Diagnostic submission result:', result);
-
-        // Update local state with the score from the API
-        setQuizScore(result.score);
-        setShowResults(true);
-
-        // Reload the topic data to get updated mastery and learning modules
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data } = await supabase
-          .from('course_packs')
-          .select('course_packs')
-          .eq('user_id', user.id)
-          .single();
-        
-        const pack = data.course_packs.find(p => p.course_pack_id === packId);
-        if (pack?.topic_session) {
-          setTopicData(pack.topic_session);
-        }
-
-      } catch (error) {
-        console.error('Error submitting diagnostic:', error);
-        alert('Failed to submit diagnostic. Please try again.');
-      } finally {
-        setSubmittingQuiz(false);
-      }
-    } else {
-      // For final quiz, calculate score and redirect to discussion
-      let correctCount = 0;
-      questions.forEach(q => {
-        if (answers[q.question_id] === q.correct_answer) {
-          correctCount++;
-        }
+      // Call the submit-diagnostic API
+      const response = await fetch('/api/submit-diagnostic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          coursePackId: packId,
+          answers: submittedAnswers,
+          isRetake: isRetakingDiagnostic // Flag to indicate this is a retake after final quiz
+        })
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to submit quiz: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Quiz submission result:', result);
+
+      // Update local state with the score from the API
+      setQuizScore(result.score);
+      setShowResults(true);
+
+      // If this was the final quiz (not a retake), prompt user to retake diagnostic
+      if (isFinalQuiz && !isRetakingDiagnostic) {
+        setShowRetakeDiagnostic(true);
+      }
+
+      // Reload the topic data to get updated mastery and learning modules
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase
+        .from('course_packs')
+        .select('course_packs')
+        .eq('user_id', user.id)
+        .single();
       
-      const score = {
-        num_correct: correctCount,
-        num_total: questions.length,
-        percent: (correctCount / questions.length) * 100
-      };
-      
-      // Redirect to discussion page after final quiz
-      router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
+      const pack = data.course_packs.find(p => p.course_pack_id === packId);
+      if (pack?.topic_session) {
+        setTopicData(pack.topic_session);
+      }
+
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      alert('Failed to submit quiz. Please try again.');
+    } finally {
+      setSubmittingQuiz(false);
     }
   };
 
   const handleContinueAfterQuiz = () => {
     // Always redirect to discussion page after any quiz (diagnostic, learning modules, or final)
+    router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
+  };
+
+  const handleRetakeDiagnostic = () => {
+    // Reset state to retake diagnostic quiz
+    setIsRetakingDiagnostic(true);
+    setShowResults(false);
+    setShowRetakeDiagnostic(false);
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    setQuizScore(null);
+  };
+
+  const handleSkipRetake = () => {
+    // Skip retaking and go to discussion
     router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
   };
 
@@ -258,26 +264,25 @@ function TopicSessionContent() {
     );
   }
 
-  // Render Diagnostic or Final Quiz
-  if ((currentView === 'diagnostic' || currentView === 'final_quiz') && !showResults) {
-    const questions = currentView === 'diagnostic' 
-      ? topicData.diagnostic?.questions || []
-      : topicData.final_quiz?.questions || [];
+  // Render Diagnostic Quiz (used for both initial diagnostic and final quiz)
+  if (currentView === 'diagnostic' && !showResults) {
+    // Always use diagnostic questions
+    const questions = topicData.diagnostic?.questions || [];
     
     // If no questions available, show error
     if (questions.length === 0) {
       return (
-        <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
+        <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e3e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
           <Header />
           <main className="grow flex items-center justify-center">
             <div className="max-w-md mx-auto px-4 text-center">
               <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8">
                 <div className="text-6xl mb-4">📝</div>
                 <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-3">
-                  {currentView === 'diagnostic' ? 'Diagnostic Quiz' : 'Final Quiz'} Not Available
+                  Quiz Not Available
                 </h2>
                 <p className="text-[#5a5a5a] dark:text-[#b8b3a3] mb-6">
-                  The {currentView === 'diagnostic' ? 'diagnostic' : 'final'} quiz questions haven&apos;t been generated yet for this topic. Please check back later or contact support.
+                  The quiz questions haven&apos;t been generated yet for this topic. Please check back later or contact support.
                 </p>
                 <div className="space-y-3">
                   <button 
@@ -320,7 +325,7 @@ function TopicSessionContent() {
             <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8 shadow-lg">
               <div className="mb-6">
                 <h1 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
-                  {currentView === 'diagnostic' ? '📝 Diagnostic Quiz' : '🎯 Final Quiz'}
+                  {topicData.state === 'final_quiz' || topicData.state === 'final' ? '🎯 Final Assessment' : '📝 Diagnostic Quiz'}
                 </h1>
                 <p className="text-[#5a5a5a] dark:text-[#b8b3a3]">{topicData.title}</p>
               </div>
@@ -424,9 +429,8 @@ function TopicSessionContent() {
 
   // Render Quiz Results
   if (showResults && quizScore) {
-    const questions = currentView === 'diagnostic' 
-      ? topicData.diagnostic?.questions || []
-      : topicData.final_quiz?.questions || [];
+    // Always use diagnostic questions
+    const questions = topicData.diagnostic?.questions || [];
     
     const diagnosticAnalysis = topicData.diagnostic?.submission?.analysis || {};
     const perQuestion = diagnosticAnalysis.per_question || [];
@@ -445,7 +449,7 @@ function TopicSessionContent() {
                   {quizScore.percent >= 0.8 ? '🎉' : quizScore.percent >= 0.6 ? '👍' : '📚'}
                 </div>
                 <h1 className="text-3xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
-                  {currentView === 'diagnostic' ? 'Diagnostic' : 'Final Quiz'} Results
+                  {topicData.state === 'final_quiz' || topicData.state === 'final' ? 'Final Assessment' : 'Diagnostic'} Results
                 </h1>
                 <p className="text-xl text-[#5a5a5a] dark:text-[#b8b3a3] mb-4">
                   You scored {quizScore.num_correct} out of {quizScore.num_total}
@@ -513,15 +517,25 @@ function TopicSessionContent() {
               </div>
 
               {/* Mastery Analysis */}
-              {currentView === 'diagnostic' && topicData?.subskills && (
+              {topicData?.subskills && (
                 <div className="mb-8 p-6 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-xl">
                   <h2 className="text-xl font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
-                    Your Skill Mastery
+                    {isRetakingDiagnostic ? '📈 Your Improvement' : 'Your Skill Mastery'}
                   </h2>
+                  {isRetakingDiagnostic && (
+                    <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mb-4">
+                      See how much you&apos;ve improved after completing the learning modules!
+                    </p>
+                  )}
                   <div className="space-y-3">
                     {topicData.subskills.map((skill) => {
                       const masteryPercent = Math.round((skill.mastery || 0) * 100);
                       const isWeak = masteryPercent < 100;
+                      const previousMastery = skill.previous_mastery !== undefined 
+                        ? Math.round(skill.previous_mastery * 100) 
+                        : null;
+                      const improvement = skill.improvement_percent || 0;
+                      const hasImproved = improvement > 0;
                       
                       return (
                         <div key={skill.subskill_id} className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-lg p-4">
@@ -529,11 +543,25 @@ function TopicSessionContent() {
                             <span className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3d3]">
                               {skill.name}
                             </span>
-                            <span className={`text-sm font-bold ${
-                              isWeak ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-                            }`}>
-                              {masteryPercent}%
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {isRetakingDiagnostic && previousMastery !== null && (
+                                <>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 line-through">
+                                    {previousMastery}%
+                                  </span>
+                                  {hasImproved && (
+                                    <span className="text-xs font-bold text-green-600 dark:text-green-400">
+                                      +{improvement}%
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                              <span className={`text-sm font-bold ${
+                                isWeak ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                              }`}>
+                                {masteryPercent}%
+                              </span>
+                            </div>
                           </div>
                           <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-2">
                             <div 
@@ -543,6 +571,11 @@ function TopicSessionContent() {
                               style={{ width: `${Math.max(masteryPercent, 5)}%` }}
                             />
                           </div>
+                          {isRetakingDiagnostic && hasImproved && (
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-2 font-medium">
+                              🎉 Great improvement! You&apos;ve mastered this skill better.
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -552,17 +585,49 @@ function TopicSessionContent() {
 
               {/* Next Steps */}
               <div className="text-center">
-                <button
-                  onClick={handleContinueAfterQuiz}
-                  className="px-8 py-4 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-xl hover:shadow-lg font-semibold text-lg transition-all"
-                >
-                  {currentView === 'diagnostic' ? '💬 Continue to Discussion' : '🎉 View Roadmap'}
-                </button>
-                <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mt-4">
-                  {currentView === 'diagnostic' 
-                    ? 'Next: Discuss this topic with an AI tutor to strengthen your understanding'
-                    : 'Congratulations on completing this topic!'}
-                </p>
+                {showRetakeDiagnostic ? (
+                  <div className="space-y-4">
+                    <div className="bg-[#f5d5cb] dark:bg-[#5a4a45] rounded-xl p-6 border-2 border-[#c09080] dark:border-[#d4c4dc]">
+                      <div className="text-4xl mb-3">🔄</div>
+                      <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
+                        Retake the Diagnostic Quiz
+                      </h3>
+                      <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mb-4">
+                        Now that you&apos;ve completed the final assessment, retake the diagnostic quiz to update your mastery scores and see how much you&apos;ve improved!
+                      </p>
+                      <div className="flex gap-3 justify-center">
+                        <button
+                          onClick={handleRetakeDiagnostic}
+                          className="px-6 py-3 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg font-semibold transition-all"
+                        >
+                          📝 Retake Diagnostic
+                        </button>
+                        <button
+                          onClick={handleSkipRetake}
+                          className="px-6 py-3 bg-[#e8e3d3] dark:bg-[#4a4a4a] text-[#2d2d2d] dark:text-[#e8e3d3] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#5a5a5a] font-semibold transition-colors"
+                        >
+                          Skip for Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleContinueAfterQuiz}
+                      className="px-8 py-4 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-xl hover:shadow-lg font-semibold text-lg transition-all"
+                    >
+                      {isRetakingDiagnostic ? '💬 Continue to Discussion' : currentView === 'diagnostic' ? '💬 Continue to Discussion' : '🎉 View Roadmap'}
+                    </button>
+                    <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mt-4">
+                      {isRetakingDiagnostic
+                        ? 'Your updated mastery scores have been recorded!'
+                        : currentView === 'diagnostic' 
+                        ? 'Next: Discuss this topic with an AI tutor to strengthen your understanding'
+                        : 'Congratulations on completing this topic!'}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -590,14 +655,14 @@ function TopicSessionContent() {
                   Learning Modules Not Available
                 </h2>
                 <p className="text-[#5a5a5a] dark:text-[#b8b3a3] mb-6">
-                  No learning modules have been generated for this topic yet. You can skip to the final quiz or return to the dashboard.
+                  No learning modules have been generated for this topic yet. You can skip to discussion or return to the dashboard.
                 </p>
                 <div className="space-y-3">
                   <button 
-                    onClick={() => setCurrentView('final_quiz')}
+                    onClick={() => router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`)}
                     className="w-full px-6 py-3 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg font-semibold transition-all"
                   >
-                    Skip to Final Quiz
+                    Skip to Discussion
                   </button>
                   <button 
                     onClick={() => router.push('/dashboard')}
