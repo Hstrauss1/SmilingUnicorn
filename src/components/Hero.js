@@ -12,20 +12,19 @@ export default function Hero() {
             </span>
             AI-Powered Learning
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-[#2d2d2d] dark:text-[#e8e3d3] mb-6">
             <span className="bg-gradient-to-r from-[#c09080] to-[#d4c4dc] bg-clip-text text-transparent">
               Accessible Tutoring
             </span>
-            <span>
-              {" "}for Everyone, Everywhere
-            </span>
+            <span> for Everyone, Everywhere</span>
           </h1>
-          
+
           <p className="mt-6 text-xl text-[#5a5a5a] dark:text-[#b8b3a3] max-w-3xl mx-auto leading-relaxed">
-            Breaking down barriers to learning. Upload any document and let our AI create free, personalized learning roadmaps. Quality education should be accessible to all, regardless of background or budget.
+            Breaking down barriers to learning. Upload any document and let our
+            AI create free, personalized learning roadmaps.
           </p>
-          
+
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/upload"
@@ -40,7 +39,6 @@ export default function Hero() {
               See How It Works
             </Link>
           </div>
-        
         </div>
       </div>
     </section>

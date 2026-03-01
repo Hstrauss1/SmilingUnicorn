@@ -3,25 +3,25 @@ export default function HowItWorks() {
     {
       number: "01",
       title: "Upload Your Document",
-      description: "Simply drag and drop or select your document. We support PDF, Word, PowerPoint, and text files.",
+      description: "Simply drag and drop or select your PDF(s).",
       icon: "📤"
     },
     {
       number: "02",
       title: "AI Analyzes Content",
-      description: "Our advanced AI engine processes your document, identifying key concepts, topics, and learning objectives.",
+      description: "Our AI engine processes your document, identifying key concepts, topics, and learning objectives.",
       icon: "🧠"
     },
     {
       number: "03",
       title: "Customize Your Path",
-      description: "Set your learning goals, current skill level, and time commitment to personalize your roadmap.",
+      description: "Set your course topic to personalize your roadmap.",
       icon: "⚙️"
     },
     {
       number: "04",
       title: "Start Learning",
-      description: "Follow your personalized roadmap, track progress, and achieve your learning goals efficiently.",
+      description: "Follow your roadmap, track progress, and achieve your learning goals efficiently.",
       icon: "🚀"
     }
   ];
