@@ -1,22 +1,18 @@
 export default function Features() {
   const features = [
     {
-      icon: "🌍",
       title: "Free for Everyone",
       description: "No paywalls, no subscriptions. We believe quality education should be accessible to all, regardless of financial background."
     },
     {
-      icon: "🗺️",
       title: "Custom Roadmaps",
       description: "Generate personalized learning paths based on the document content you provide."
     },
     {
-      icon: "♿",
       title: "Accessible Design",
       description: "Built with accessibility in mind. Multilingual discussion support for learners of all backgrounds."
     },
     {
-      icon: "⚡",
       title: "Quick Processing",
       description: "Get your learning roadmap quickly. Our AI engine processes documents without compromising quality."
     },
