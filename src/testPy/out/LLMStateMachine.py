@@ -332,99 +332,32 @@ def build_learning_modules_llm(topic_session_obj: dict, chunk_map: Dict[str, str
     return ts
 
 
-def build_final_quiz_llm(topic_session_obj: dict, chunk_map: Dict[str, str], questions_per_subskill: int = 1) -> dict:
+def build_final_quiz_from_diagnostic(topic_session_obj: dict) -> dict:
+    """
+    Populate final_quiz with the subset of original diagnostic questions
+    that cover the weak subskills. No LLM call required.
+    """
     ts = ensure_schema_defaults(topic_session_obj)
 
-    weak = ts["topic_session"]["diagnostic"]["submission"]["analysis"].get("weak_subskills", [])
-    subskills = ts["topic_session"]["subskills"]
-    sub_by_id = {s["subskill_id"]: s for s in subskills}
+    weak = set(ts["topic_session"]["diagnostic"]["submission"]["analysis"].get("weak_subskills", []))
+    diagnostic_questions = ts["topic_session"]["diagnostic"].get("questions", [])
 
-    system = (
-        "Return ONLY valid JSON. No prose, no markdown, no code fences.\n"
-        "The first character must be '{'.\n"
-        "You are writing final quiz questions for EXACTLY ONE subskill.\n"
-        f"Return EXACTLY {questions_per_subskill} questions.\n"
-        "Rules:\n"
-        "- difficulty should be 2\n"
-        "- Exactly 4 choices\n"
-        "- correct_answer must be one of the choices\n"
-        "- Keep prompt short (max 220 chars)\n"
-        "- Do not include multi-line code blocks; if code is needed, keep it to one line\n"
-        "Schema:\n"
-        "{\n"
-        '  "questions": [\n'
-        '    {"subskill_id":"string","type":"mcq","difficulty":2,"prompt":"string","choices":["a","b","c","d"],"correct_answer":"string"}\n'
-        "  ]\n"
-        "}\n"
-    )
+    # Keep only questions whose subskill the student got wrong
+    final_questions = [q for q in diagnostic_questions if q.get("subskill_id") in weak]
 
-    questions = []
-    q_index = 1
-
-    for sid in weak:
-        s = sub_by_id.get(sid)
-        if not s:
-            continue
-
-        evidence = []
-        for cid in (s.get("evidence_chunk_ids") or [])[:MAX_CHUNKS_PER_SUBSKILL]:
-            txt = chunk_map.get(cid, "")
-            if txt.strip():
-                evidence.append({"chunk_id": cid, "text": _snippet(txt, MAX_CHARS_PER_CHUNK)})
-
-        user = json.dumps(
-            {"subskill": {"subskill_id": sid, "name": s.get("name", "")}, "evidence": evidence},
-            indent=2,
-        )
-
-        out = llm_generate_json(system, user, temperature=0.0)
-        raw_qs = out.get("questions", []) if isinstance(out, dict) else []
-        if not isinstance(raw_qs, list):
-            raw_qs = []
-
-        kept = 0
-        for rq in raw_qs:
-            if kept >= questions_per_subskill:
-                break
-            if not isinstance(rq, dict):
-                continue
-            choices = rq.get("choices", [])
-            ca = rq.get("correct_answer", "")
-            if not isinstance(choices, list) or len(choices) != 4 or ca not in choices:
-                continue
-
-            questions.append(
-                {
-                    "question_id": f"f{q_index}",
-                    "subskill_id": sid,
-                    "type": "mcq",
-                    "difficulty": 2,
-                    "prompt": rq.get("prompt", ""),
-                    "choices": choices,
-                    "correct_answer": ca,
-                }
-            )
-            q_index += 1
-            kept += 1
-
-        if kept == 0:
-            questions.append(
-                {
-                    "question_id": f"f{q_index}",
-                    "subskill_id": sid,
-                    "type": "mcq",
-                    "difficulty": 2,
-                    "prompt": f"Final check: {s.get('name','')}",
-                    "choices": ["A", "B", "C", "D"],
-                    "correct_answer": "A",
-                }
-            )
-            q_index += 1
+    if not final_questions:
+        # Fallback: reuse all diagnostic questions if nothing specific is weak
+        final_questions = diagnostic_questions
 
     ts["topic_session"]["final_quiz"] = {
-        "quiz_id": "final_llm_v1",
-        "questions": questions,
-        "submission": {"answers": [], "score": {"num_correct": 0, "num_total": len(questions), "percent": 0.0}, "passed": False, "weak_subskills": []},
+        "quiz_id": "final_retest_v1",
+        "questions": final_questions,
+        "submission": {
+            "answers": [],
+            "score": {"num_correct": 0, "num_total": len(final_questions), "percent": 0.0},
+            "passed": False,
+            "weak_subskills": [],
+        },
     }
     ts["topic_session"]["state"] = "final"
     return ts
@@ -529,7 +462,7 @@ def run_state_machine(ts: dict, chunk_map: Dict[str, str], user_input: List[dict
     # FINAL
     if state == "final":
         if not ts["topic_session"]["final_quiz"].get("questions"):
-            ts = build_final_quiz_llm(ts, chunk_map)
+            ts = build_final_quiz_from_diagnostic(ts)
             return ts, "show_final"
 
         if user_input:

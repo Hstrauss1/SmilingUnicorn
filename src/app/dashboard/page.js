@@ -388,22 +388,6 @@ export default function DashboardPage() {
                       View Roadmap
                     </Link>
                   </div>
-                  
-                  {/* Overall Progress */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-[#5a5a5a] dark:text-[#b8b3a3]">Overall Progress</span>
-                      <span className="font-semibold text-[#2d2d2d] dark:text-[#e8e3d3]">
-                        {selectedPack.progress}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-3">
-                      <div
-                        className="bg-linear-to-r from-[#c09080] to-[#d4c4dc] h-3 rounded-full transition-all"
-                        style={{ width: `${selectedPack.progress}%` }}
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 {/* Topic Sessions List */}
@@ -494,7 +478,7 @@ export default function DashboardPage() {
                                     : "bg-blue-600 text-white hover:bg-blue-700"
                                 }`}
                               >
-                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Quiz" : "▶️ Start"}
+                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Assessment" : "▶️ Start"}
                               </Link>
                             )}
                           </div>

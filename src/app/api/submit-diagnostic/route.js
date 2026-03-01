@@ -15,7 +15,7 @@ const execAsync = promisify(exec);
  */
 export async function POST(request) {
   try {
-    const { coursePackId, answers } = await request.json();
+    const { coursePackId, answers, isRetake = false } = await request.json();
 
     if (!coursePackId || !answers || !Array.isArray(answers)) {
       return NextResponse.json(
@@ -24,7 +24,7 @@ export async function POST(request) {
       );
     }
 
-    console.log(`Submitting diagnostic for course pack ${coursePackId}`);
+    console.log(`Submitting ${isRetake ? 'retake ' : ''}diagnostic for course pack ${coursePackId}`);
     console.log(`Received ${answers.length} answers`);
 
     // Get authenticated user
@@ -64,14 +64,24 @@ export async function POST(request) {
       );
     }
 
-    // Grade the diagnostic
-    const gradedResult = gradeDiagnosticAndUpdateMastery(coursePack, answers);
+    // Grade the diagnostic and update mastery
+    const gradedResult = gradeDiagnosticAndUpdateMastery(coursePack, answers, isRetake);
 
-    // Generate learning modules for weak subskills
-    const withLearningModules = await generateLearningModules(
-      gradedResult, 
-      coursePackId
-    );
+    // Generate learning modules only if this is NOT a retake
+    let withLearningModules;
+    if (isRetake) {
+      // For retakes, just update the mastery scores without generating new modules
+      withLearningModules = gradedResult;
+      withLearningModules.topic_session.state = 'completed';
+      withLearningModules.topic_session.completion.status = 'completed';
+      withLearningModules.topic_session.completion.completed_at = new Date().toISOString();
+    } else {
+      // For initial diagnostic, generate learning modules
+      withLearningModules = await generateLearningModules(
+        gradedResult, 
+        coursePackId
+      );
+    }
 
     // Update the course pack in Supabase
     const updatedCoursePacks = coursePackData.course_packs.map(pack => {
@@ -102,19 +112,22 @@ export async function POST(request) {
 
     console.log(`Diagnostic graded: ${score.num_correct}/${score.num_total} (${Math.round(score.percent * 100)}%)`);
     console.log(`Weak subskills identified: ${weakSubskills.length}`);
-    console.log(`Learning modules created: ${learningModules.length}`);
+    console.log(`Learning modules: ${isRetake ? 'N/A (retake)' : learningModules.length}`);
 
     return NextResponse.json({
       success: true,
       score: score,
       weakSubskills: weakSubskills,
       learningModules: learningModules,
+      isRetake: isRetake,
       masteryUpdates: withLearningModules.topic_session.subskills.map(s => ({
         subskill_id: s.subskill_id,
         name: s.name,
         mastery: s.mastery
       })),
-      message: 'Diagnostic submitted and graded successfully'
+      message: isRetake 
+        ? 'Diagnostic retake submitted - mastery scores updated successfully' 
+        : 'Diagnostic submitted and graded successfully'
     });
 
   } catch (error) {
@@ -129,9 +142,17 @@ export async function POST(request) {
 /**
  * Grade diagnostic answers and update subskill mastery
  */
-function gradeDiagnosticAndUpdateMastery(coursePack, submittedAnswers) {
+function gradeDiagnosticAndUpdateMastery(coursePack, submittedAnswers, isRetake = false) {
   const result = { ...coursePack };
   const questions = result.topic_session.diagnostic.questions;
+  
+  // Store the previous mastery scores if this is a retake
+  const previousMastery = isRetake 
+    ? result.topic_session.subskills.reduce((acc, skill) => {
+        acc[skill.subskill_id] = skill.mastery || 0;
+        return acc;
+      }, {})
+    : {};
   
   // Create lookup maps
   const questionById = {};
@@ -210,17 +231,36 @@ function gradeDiagnosticAndUpdateMastery(coursePack, submittedAnswers) {
     
     // Calculate mastery as percentage correct (0.0 to 1.0)
     // If no questions for this subskill, keep mastery at 0
-    const mastery = total > 0 ? correct / total : 0;
+    const currentMastery = total > 0 ? correct / total : 0;
+    
+    // Calculate correction score if this is a retake
+    let correctionScore = 0;
+    if (isRetake && previousMastery[sid] !== undefined) {
+      const improvement = currentMastery - previousMastery[sid];
+      correctionScore = Math.max(0, improvement); // Only positive improvements
+    }
 
     return {
       ...subskill,
-      mastery: mastery
+      mastery: currentMastery,
+      ...(isRetake && {
+        previous_mastery: previousMastery[sid],
+        correction_score: correctionScore,
+        improvement_percent: previousMastery[sid] !== undefined 
+          ? Math.round((currentMastery - previousMastery[sid]) * 100) 
+          : 0
+      })
     };
   });
 
   // Update state based on results
-  // Always go to discussion after diagnostic
-  result.topic_session.state = 'discussion';
+  if (isRetake) {
+    // For retakes, mark as completed
+    result.topic_session.state = 'completed';
+  } else {
+    // Always go to discussion after initial diagnostic
+    result.topic_session.state = 'discussion';
+  }
 
   return result;
 }

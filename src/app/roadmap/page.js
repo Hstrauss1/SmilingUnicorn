@@ -209,7 +209,7 @@ function RoadmapContent() {
                           onClick={() => router.push(`/topic/${topic.id}?packId=${packId}`)}
                           className="px-6 py-2 rounded-xl font-semibold transition-colors bg-green-600 text-white hover:bg-green-700 shadow-sm"
                         >
-                          🎯 Take Final Quiz
+                          🎯 Take Final Assessment
                         </button>
                       ) : (
                         <button 
