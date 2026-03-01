@@ -98,12 +98,16 @@ from copy import deepcopy
 from datetime import datetime
 
 def build_final_quiz_from_weak_subskills(topic_session_obj: dict, questions_per_subskill: int = 2) -> dict:
+    """
+    Build final quiz using template bank.
+    Generates questions only for weak subskills from diagnostic.
+    """
     ts = deepcopy(topic_session_obj)
 
     analysis = ts["topic_session"]["diagnostic"]["submission"]["analysis"]
     weak = analysis.get("weak_subskills", [])
 
-    # If none weak, you can either skip final or make a short mixed final.
+    # If none weak, complete the topic
     if not weak:
         ts["topic_session"]["state"] = "completed"
         ts["topic_session"]["completion"]["status"] = "completed"
@@ -117,13 +121,26 @@ def build_final_quiz_from_weak_subskills(topic_session_obj: dict, questions_per_
     questions_out = []
     q_index = 1
 
+    # Generate questions per weak subskill
     for subskill_id in weak:
         bank = FINAL_QUIZ_BANK.get(subskill_id, [])
         if not bank:
-            # if no templates exist, skip gracefully
+            # If no templates exist, create fallback question
+            sub_name = next((s["name"] for s in subskills if s["subskill_id"] == subskill_id), "this topic")
+            questions_out.append({
+                "question_id": f"f{q_index}",
+                "subskill_id": subskill_id,
+                "type": "mcq",
+                "difficulty": 2,
+                "prompt": f"Final check: {sub_name}",
+                "choices": ["A", "B", "C", "D"],
+                "correct_answer": "A",
+                "source_evidence": evidence_by_subskill.get(subskill_id, [])
+            })
+            q_index += 1
             continue
 
-        # pick the first N templates (later you can randomize)
+        # Pick the first N templates (can be randomized later)
         picked = bank[:questions_per_subskill]
 
         for template in picked:
@@ -131,11 +148,10 @@ def build_final_quiz_from_weak_subskills(topic_session_obj: dict, questions_per_
                 "question_id": f"f{q_index}",
                 "subskill_id": subskill_id,
                 "type": template["type"],
-                "difficulty": template["difficulty"],
+                "difficulty": 2,  # Force difficulty to 2 for consistency
                 "prompt": template["prompt"],
                 "choices": template.get("choices", []),
                 "correct_answer": template["correct_answer"],
-                # optional grounding
                 "source_evidence": evidence_by_subskill.get(subskill_id, [])
             })
             q_index += 1

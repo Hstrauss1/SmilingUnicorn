@@ -189,17 +189,40 @@ function RoadmapContent() {
                         </div>
                       </div>
                       
-                      {/* All topics are accessible - no locked topics */}
-                      <button 
-                        onClick={() => router.push(`/topic/${topic.id}?packId=${packId}`)}
-                        className={`px-6 py-2 rounded-xl font-semibold transition-colors ${
-                          isCompleted 
-                            ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' 
-                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
-                        }`}
-                      >
-                        {isCompleted ? 'Review' : topic.state === 'diagnostic' ? 'Start Diagnostic' : 'Continue'}
-                      </button>
+                      {/* Button logic based on state */}
+                      {topic.state === 'discussion' ? (
+                        <button 
+                          onClick={() => router.push(`/discussion?topicId=${topic.id}&packId=${packId}&topicTitle=${encodeURIComponent(topic.title)}`)}
+                          className="px-6 py-2 rounded-xl font-semibold transition-colors bg-purple-600 text-white hover:bg-purple-700 shadow-sm"
+                        >
+                          � Discuss Topic
+                        </button>
+                      ) : topic.state === 'learning_session' ? (
+                        <button 
+                          onClick={() => router.push(`/topic/${topic.id}?packId=${packId}`)}
+                          className="px-6 py-2 rounded-xl font-semibold transition-colors bg-orange-600 text-white hover:bg-orange-700 shadow-sm"
+                        >
+                          📚 Learn Concepts
+                        </button>
+                      ) : topic.state === 'final_quiz' || topic.state === 'final' ? (
+                        <button 
+                          onClick={() => router.push(`/topic/${topic.id}?packId=${packId}`)}
+                          className="px-6 py-2 rounded-xl font-semibold transition-colors bg-green-600 text-white hover:bg-green-700 shadow-sm"
+                        >
+                          🎯 Take Final Quiz
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => router.push(`/topic/${topic.id}?packId=${packId}`)}
+                          className={`px-6 py-2 rounded-xl font-semibold transition-colors ${
+                            isCompleted 
+                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' 
+                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                          }`}
+                        >
+                          {isCompleted ? 'Review' : topic.state === 'diagnostic' ? 'Start Diagnostic' : 'Continue'}
+                        </button>
+                      )}
                     </div>
 
                     {topic.subskills && topic.subskills.length > 0 ? (

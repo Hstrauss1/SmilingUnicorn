@@ -297,9 +297,28 @@ def build_learning_modules(topic_session_obj, chunk_map):
 def build_final_quiz_from_weak_subskills(topic_session_obj, chunk_map):
     ts = deepcopy(topic_session_obj)
 
-    weak = ts["topic_session"]["diagnostic"]["submission"]["analysis"]["weak_subskills"]
+    weak = ts["topic_session"]["diagnostic"]["submission"]["analysis"].get("weak_subskills", [])
     subskills = ts["topic_session"]["subskills"]
     sub_by_id = {s["subskill_id"]: s for s in subskills}
+
+    system = (
+        "Return ONLY valid JSON. No prose, no markdown, no code fences.\n"
+        "The first character must be '{'.\n"
+        "You are writing final quiz questions for EXACTLY ONE subskill.\n"
+        "Return EXACTLY 1 questions.\n"
+        "Rules:\n"
+        "- difficulty should be 2\n"
+        "- Exactly 4 choices\n"
+        "- correct_answer must be one of the choices\n"
+        "- Keep prompt short (max 220 chars)\n"
+        "- Do not include multi-line code blocks; if code is needed, keep it to one line\n"
+        "Schema:\n"
+        "{\n"
+        '  "questions": [\n'
+        '    {"subskill_id":"string","type":"mcq","difficulty":2,"prompt":"string","choices":["a","b","c","d"],"correct_answer":"string"}\n'
+        "  ]\n"
+        "}\n"
+    )
 
     questions = []
     q_index = 1
@@ -309,16 +328,73 @@ def build_final_quiz_from_weak_subskills(topic_session_obj, chunk_map):
         if not s:
             continue
 
-        questions.append({
-            "question_id": f"f{q_index}",
-            "subskill_id": sid,
-            "type": "mcq",
-            "difficulty": 2,
-            "prompt": f"Final check: {s['name']}",
-            "choices": ["A", "B", "C", "D"],
-            "correct_answer": "A"
-        })
-        q_index += 1
+        evidence = []
+        for cid in (s.get("evidence_chunk_ids") or []):
+            txt = chunk_map.get(cid, "")
+            if txt.strip():
+                evidence.append({"chunk_id": cid, "text": txt[:700]})
+
+        user = json.dumps(
+            {"subskill": {"subskill_id": sid, "name": s.get("name", "")}, "evidence": evidence},
+            indent=2,
+        )
+
+        try:
+            out = llm_generate(system, user)
+            raw_qs = out.get("questions", []) if isinstance(out, dict) else []
+            if not isinstance(raw_qs, list):
+                raw_qs = []
+
+            kept = 0
+            for rq in raw_qs:
+                if kept >= 1:
+                    break
+                if not isinstance(rq, dict):
+                    continue
+                choices = rq.get("choices", [])
+                ca = rq.get("correct_answer", "")
+                if not isinstance(choices, list) or len(choices) != 4 or ca not in choices:
+                    continue
+
+                questions.append(
+                    {
+                        "question_id": f"f{q_index}",
+                        "subskill_id": sid,
+                        "type": "mcq",
+                        "difficulty": 2,
+                        "prompt": rq.get("prompt", ""),
+                        "choices": choices,
+                        "correct_answer": ca,
+                    }
+                )
+                q_index += 1
+                kept += 1
+
+            if kept == 0:
+                questions.append(
+                    {
+                        "question_id": f"f{q_index}",
+                        "subskill_id": sid,
+                        "type": "mcq",
+                        "difficulty": 2,
+                        "prompt": f"Final check: {s.get('name','')}",
+                        "choices": ["A", "B", "C", "D"],
+                        "correct_answer": "A",
+                    }
+                )
+                q_index += 1
+        except Exception:
+            # Fallback if LLM fails
+            questions.append({
+                "question_id": f"f{q_index}",
+                "subskill_id": sid,
+                "type": "mcq",
+                "difficulty": 2,
+                "prompt": f"Final check: {s.get('name', '')}",
+                "choices": ["A", "B", "C", "D"],
+                "correct_answer": "A"
+            })
+            q_index += 1
 
     ts["topic_session"]["final_quiz"] = {
         "quiz_id": "final_v1",
