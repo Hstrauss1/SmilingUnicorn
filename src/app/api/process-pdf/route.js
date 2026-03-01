@@ -131,7 +131,7 @@ export async function POST(request) {
     let topicGenStdout, topicGenStderr;
     try {
       const topicGenResult = await execAsync(
-        `cd "${outputDir}" && "${pythonCmd}" FinalTopicGen.py "${chunksFile}" "${courseName}" "." --with-diagnostic`,
+        `cd "${outputDir}" && "${pythonCmd}" FinalTopicGen.py "${chunksFile}" "${courseName}" "."`,
         { maxBuffer: 10 * 1024 * 1024 }
       );
       topicGenStdout = topicGenResult.stdout;
@@ -298,7 +298,6 @@ export async function POST(request) {
         .from('course_packs')
         .update({
           course_packs: updatedCoursePacks,
-          updated_at: new Date().toISOString()
         })
         .eq('id', existingRow.id)
         .select()

@@ -22,6 +22,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [buildingDiagnostic, setBuildingDiagnostic] = useState(false);
+  const [diagnosticError, setDiagnosticError] = useState(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -183,6 +185,54 @@ export default function DashboardPage() {
     return 'in-progress'; // No topics should be locked by default
   };
 
+  const handleBuildDiagnostic = async (topic) => {
+    setBuildingDiagnostic(true);
+    setDiagnosticError(null);
+
+    try {
+      console.log(`Building diagnostic for topic ${topic.id} in course pack ${selectedPack.id}`);
+
+      const response = await fetch('/api/build-diagnostic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          coursePackId: selectedPack.id,
+          topicId: topic.id
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to build diagnostic');
+      }
+
+      console.log('Diagnostic built successfully:', data);
+
+      // Refresh the dashboard data
+      const formattedPacks = await getUserCoursePacksFormatted();
+      setCoursePacks(formattedPacks);
+      
+      // Update selected pack
+      const updatedPack = formattedPacks.find(pack => pack.id === selectedPack.id);
+      if (updatedPack) {
+        setSelectedPack(updatedPack);
+      }
+
+      // Navigate to the topic page with the diagnostic
+      router.push(`/topic/${topic.id}?packId=${selectedPack.id}`);
+
+    } catch (error) {
+      console.error('Error building diagnostic:', error);
+      setDiagnosticError(error.message);
+      alert(`Failed to build diagnostic: ${error.message}`);
+    } finally {
+      setBuildingDiagnostic(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
@@ -231,7 +281,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
+    <div className="min-h-screen bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
       <Header />
       
       <main className="pt-32 pb-20 px-6 lg:px-8">
@@ -299,7 +349,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1.5 bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-gradient-to-r from-[#c09080] to-[#d4c4dc] rounded-full" 
+                              className="h-full bg-linear-to-r from-[#c09080] to-[#d4c4dc] rounded-full" 
                               style={{ width: `${pack.progress}%` }}
                             />
                           </div>
@@ -332,7 +382,7 @@ export default function DashboardPage() {
                     </div>
                     <Link
                       href={`/roadmap?packId=${selectedPack.id}`}
-                      className="px-4 py-2 bg-gradient-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
+                      className="px-4 py-2 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
                     >
                       View Roadmap
                     </Link>
@@ -348,7 +398,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-3">
                       <div
-                        className="bg-gradient-to-r from-[#c09080] to-[#d4c4dc] h-3 rounded-full transition-all"
+                        className="bg-linear-to-r from-[#c09080] to-[#d4c4dc] h-3 rounded-full transition-all"
                         style={{ width: `${selectedPack.progress}%` }}
                       />
                     </div>
@@ -417,18 +467,35 @@ export default function DashboardPage() {
                           </div>
                           
                           <div className="mt-3">
-                            {/* All topics are accessible - no locked topics */}
-                            <Link
-                              href={`/topic/${topic.id}?packId=${selectedPack.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
-                                isCompleted
-                                  ? "bg-green-600 text-white hover:bg-green-700"
-                                  : "bg-blue-600 text-white hover:bg-blue-700"
-                              }`}
-                            >
-                              {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Quiz" : "▶️ Start"}
-                            </Link>
+                            {/* Show different button text based on diagnostic state */}
+                            {topic.state === 'diagnostic' && !topic.diagnostic?.questions?.length ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBuildDiagnostic(topic);
+                                }}
+                                disabled={buildingDiagnostic}
+                                className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
+                                  buildingDiagnostic
+                                    ? "bg-gray-400 text-white cursor-not-allowed"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                }`}
+                              >
+                                {buildingDiagnostic ? "⏳ Building Diagnostic..." : "🔨 Build Diagnostic"}
+                              </button>
+                            ) : (
+                              <Link
+                                href={`/topic/${topic.id}?packId=${selectedPack.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
+                                  isCompleted
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                }`}
+                              >
+                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Quiz" : "▶️ Start"}
+                              </Link>
+                            )}
                           </div>
                         </div>
                       );
@@ -469,7 +536,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Learning Tip */}
-              <div className="bg-gradient-to-br from-[#f5d5cb] to-[#e8d5e8] dark:from-[#5a4a45] dark:to-[#5a4a60] rounded-2xl p-6 border border-[#d4c4dc] dark:border-[#6a5a70] shadow-sm">
+              <div className="bg-linear-to-br from-[#f5d5cb] to-[#e8d5e8] dark:from-[#5a4a45] dark:to-[#5a4a60] rounded-2xl p-6 border border-[#d4c4dc] dark:border-[#6a5a70] shadow-sm">
                 <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
                   💡 Learning Tip
                 </h3>
