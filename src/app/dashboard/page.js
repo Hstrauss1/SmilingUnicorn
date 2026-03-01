@@ -313,9 +313,6 @@ export default function DashboardPage() {
                     <span className="block text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3d3]">
                       {selectedPack?.title}
                     </span>
-                    <span className="block text-xs text-[#5a5a5a] dark:text-[#b8b3a3]">
-                      {selectedPack?.progress}% complete
-                    </span>
                   </div>
                   <svg className={`shrink-0 w-5 h-5 text-[#5a5a5a] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -346,17 +343,6 @@ export default function DashboardPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                             </svg>
                           )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-linear-to-r from-[#c09080] to-[#d4c4dc] rounded-full" 
-                              style={{ width: `${pack.progress}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-[#5a5a5a] dark:text-[#b8b3a3] w-8 text-right">
-                            {pack.progress}%
-                          </span>
                         </div>
                       </button>
                     ))}

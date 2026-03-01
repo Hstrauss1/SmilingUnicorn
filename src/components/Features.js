@@ -8,38 +8,18 @@ export default function Features() {
     {
       icon: "🗺️",
       title: "Custom Roadmaps",
-      description: "Generate personalized learning paths based on your skill level, goals, and the document content you provide."
+      description: "Generate personalized learning paths based on the document content you provide."
     },
     {
       icon: "♿",
       title: "Accessible Design",
-      description: "Built with accessibility in mind. Screen reader support, keyboard navigation, and adaptive interfaces for all learners."
+      description: "Built with accessibility in mind. Multilingual discussion support for learners of all backgrounds."
     },
     {
       icon: "⚡",
-      title: "Instant Processing",
-      description: "Get your learning roadmap in seconds. Our optimized AI processes documents quickly without compromising quality."
+      title: "Quick Processing",
+      description: "Get your learning roadmap quickly. Our AI engine processes documents without compromising quality."
     },
-    {
-      icon: "�",
-      title: "Multi-Language Support",
-      description: "Learn in your native language. Our platform supports 50+ languages to break down language barriers."
-    },
-    {
-      icon: "🔄",
-      title: "Adaptive Learning",
-      description: "Roadmaps adapt to your pace and understanding, ensuring optimal learning efficiency for diverse learning styles."
-    },
-    {
-      icon: "�",
-      title: "Learn Anywhere",
-      description: "Access your learning materials on any device - desktop, tablet, or mobile. Education that fits your lifestyle."
-    },
-    {
-      icon: "🤝",
-      title: "Community Driven",
-      description: "Join a global community of learners. Share resources, collaborate, and support each other's educational journey."
-    }
   ];
 
   return (
