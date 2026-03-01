@@ -28,31 +28,41 @@ function TopicSessionContent() {
       setLoading(true);
       
       try {
-        // In production, this would fetch from Supabase:
-        // const { data, error } = await supabase
-        //   .from('topic_sessions')
-        //   .select('*')
-        //   .eq('topic_id', topicId)
-        //   .eq('course_pack_id', packId)
-        //   .single();
+        // Fetch from Supabase
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        // For now, dynamically import the topic session based on topicId
-        let topicSessionData;
-        
-        try {
-          // Try to load the specific topic session file
-          const topicModule = await import(`@/testPy/out/topic_session_${topicId}.json`);
-          topicSessionData = topicModule.default.topic_session;
-        } catch (importError) {
-          // If specific file not found, try loading from the course pack file
-          try {
-            const courseModule = await import(`@/testPy/out/course_${packId}_topic_session.json`);
-            topicSessionData = courseModule.default.topic_session;
-          } catch (courseImportError) {
-            console.error('Could not load topic session data:', importError, courseImportError);
-            topicSessionData = null;
-          }
+        if (userError || !user) {
+          console.error('User not authenticated:', userError);
+          setTopicData(null);
+          setLoading(false);
+          return;
         }
+
+        // Fetch user's course_packs row
+        const { data, error: fetchError } = await supabase
+          .from('course_packs')
+          .select('course_packs')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (fetchError || !data) {
+          console.error('Error fetching course packs:', fetchError);
+          setTopicData(null);
+          setLoading(false);
+          return;
+        }
+
+        // Find the course pack with matching course_pack_id
+        const pack = data.course_packs.find(p => p.course_pack_id === packId);
+        
+        if (!pack || !pack.topic_session) {
+          console.error('Topic session not found in course pack');
+          setTopicData(null);
+          setLoading(false);
+          return;
+        }
+
+        const topicSessionData = pack.topic_session;
         
         if (topicSessionData) {
           setTopicData(topicSessionData);
@@ -86,7 +96,7 @@ function TopicSessionContent() {
     };
     
     loadTopicData();
-  }, [topicId, packId]);
+  }, [topicId, packId, supabase]);
 
   const handleAnswerSelect = (questionId, answer) => {
     setAnswers({
