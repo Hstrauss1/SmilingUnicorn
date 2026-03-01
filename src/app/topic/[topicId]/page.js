@@ -23,8 +23,7 @@ function TopicSessionContent() {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [quizScore, setQuizScore] = useState(null);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
-  const [showRetakeDiagnostic, setShowRetakeDiagnostic] = useState(false);
-  const [isRetakingDiagnostic, setIsRetakingDiagnostic] = useState(false);
+  const [finalQuizPassed, setFinalQuizPassed] = useState(false);
 
   useEffect(() => {
     const loadTopicData = async () => {
@@ -134,7 +133,7 @@ function TopicSessionContent() {
         answer
       }));
 
-      console.log('Submitting quiz to API...', { packId, answers: submittedAnswers, isRetake: isRetakingDiagnostic });
+      console.log('Submitting quiz to API...', { packId, answers: submittedAnswers, isFinalQuiz });
       
       // Call the submit-diagnostic API
       const response = await fetch('/api/submit-diagnostic', {
@@ -145,7 +144,7 @@ function TopicSessionContent() {
         body: JSON.stringify({
           coursePackId: packId,
           answers: submittedAnswers,
-          isRetake: isRetakingDiagnostic // Flag to indicate this is a retake after final quiz
+          isFinalQuiz: isFinalQuiz // Flag to indicate this is the final quiz
         })
       });
 
@@ -159,11 +158,14 @@ function TopicSessionContent() {
       // Update local state with the score from the API
       setQuizScore(result.score);
       setShowResults(true);
-
-      // If this was the final quiz (not a retake), prompt user to retake diagnostic
-      if (isFinalQuiz && !isRetakingDiagnostic) {
-        setShowRetakeDiagnostic(true);
+      
+      // Store whether they passed the final quiz
+      if (isFinalQuiz && result.passed !== undefined) {
+        setFinalQuizPassed(result.passed);
       }
+      
+      // Check if they aced the diagnostic (100% on first try)
+      const acedDiagnostic = result.acedDiagnostic || false;
 
       // Reload the topic data to get updated mastery and learning modules
       const { data: { user } } = await supabase.auth.getUser();
@@ -177,6 +179,11 @@ function TopicSessionContent() {
       if (pack?.topic_session) {
         setTopicData(pack.topic_session);
       }
+      
+      // If they aced the diagnostic, show a special message in the results
+      if (acedDiagnostic) {
+        console.log('User aced the diagnostic! Module completed.');
+      }
 
     } catch (error) {
       console.error('Error submitting quiz:', error);
@@ -187,23 +194,12 @@ function TopicSessionContent() {
   };
 
   const handleContinueAfterQuiz = () => {
-    // Always redirect to discussion page after any quiz (diagnostic, learning modules, or final)
-    router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
-  };
-
-  const handleRetakeDiagnostic = () => {
-    // Reset state to retake diagnostic quiz
-    setIsRetakingDiagnostic(true);
-    setShowResults(false);
-    setShowRetakeDiagnostic(false);
-    setAnswers({});
-    setCurrentQuestionIndex(0);
-    setQuizScore(null);
-  };
-
-  const handleSkipRetake = () => {
-    // Skip retaking and go to discussion
-    router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
+    // If topic is completed, go to dashboard, otherwise to discussion
+    if (topicData?.state === 'completed') {
+      router.push('/dashboard');
+    } else {
+      router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
+    }
   };
 
   const handleNextModule = () => {
@@ -446,15 +442,41 @@ function TopicSessionContent() {
               {/* Score Header */}
               <div className="text-center mb-8">
                 <div className="text-6xl mb-4">
-                  {quizScore.percent >= 0.8 ? '🎉' : quizScore.percent >= 0.6 ? '👍' : '📚'}
+                  {(topicData.state === 'final_quiz' || topicData.state === 'final') 
+                    ? (finalQuizPassed ? '🎉' : '💪')
+                    : (topicData.state === 'completed' && quizScore.percent === 1
+                      ? '🏆'
+                      : quizScore.percent >= 0.8 ? '🎉' : quizScore.percent >= 0.6 ? '👍' : '📚')}
                 </div>
                 <h1 className="text-3xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
                   {topicData.state === 'final_quiz' || topicData.state === 'final' ? 'Final Assessment' : 'Diagnostic'} Results
                 </h1>
+                {(topicData.state === 'final_quiz' || topicData.state === 'final') && (
+                  <div className={`inline-block px-4 py-2 rounded-lg font-semibold mb-3 ${
+                    finalQuizPassed 
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200'
+                  }`}>
+                    {finalQuizPassed ? '✓ Passed - Module Complete!' : '○ Not Passed - Retake Required'}
+                  </div>
+                )}
+                {topicData.state === 'completed' && quizScore.percent === 1 && !(topicData.state === 'final_quiz' || topicData.state === 'final') && (
+                  <div className="inline-block px-4 py-2 rounded-lg font-semibold mb-3 bg-linear-to-r from-yellow-100 to-green-100 dark:from-yellow-900/30 dark:to-green-900/30 text-green-800 dark:text-green-200 border-2 border-green-500">
+                    🏆 Perfect Score - Module Completed!
+                  </div>
+                )}
                 <p className="text-xl text-[#5a5a5a] dark:text-[#b8b3a3] mb-4">
                   You scored {quizScore.num_correct} out of {quizScore.num_total}
                 </p>
-                <div className="inline-block px-6 py-3 rounded-full bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white text-2xl font-bold">
+                <div className={`inline-block px-6 py-3 rounded-full text-white text-2xl font-bold ${
+                  (topicData.state === 'final_quiz' || topicData.state === 'final')
+                    ? (finalQuizPassed 
+                      ? 'bg-green-600' 
+                      : 'bg-yellow-600')
+                    : (topicData.state === 'completed' && quizScore.percent === 1
+                      ? 'bg-linear-to-r from-yellow-500 to-green-500'
+                      : 'bg-linear-to-r from-[#c09080] to-[#d4c4dc]')
+                }`}>
                   {Math.round(quizScore.percent * 100)}%
                 </div>
               </div>
@@ -520,22 +542,12 @@ function TopicSessionContent() {
               {topicData?.subskills && (
                 <div className="mb-8 p-6 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-xl">
                   <h2 className="text-xl font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
-                    {isRetakingDiagnostic ? '📈 Your Improvement' : 'Your Skill Mastery'}
+                    Your Skill Mastery
                   </h2>
-                  {isRetakingDiagnostic && (
-                    <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mb-4">
-                      See how much you&apos;ve improved after completing the learning modules!
-                    </p>
-                  )}
                   <div className="space-y-3">
                     {topicData.subskills.map((skill) => {
                       const masteryPercent = Math.round((skill.mastery || 0) * 100);
                       const isWeak = masteryPercent < 100;
-                      const previousMastery = skill.previous_mastery !== undefined 
-                        ? Math.round(skill.previous_mastery * 100) 
-                        : null;
-                      const improvement = skill.improvement_percent || 0;
-                      const hasImproved = improvement > 0;
                       
                       return (
                         <div key={skill.subskill_id} className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-lg p-4">
@@ -543,25 +555,11 @@ function TopicSessionContent() {
                             <span className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3d3]">
                               {skill.name}
                             </span>
-                            <div className="flex items-center gap-2">
-                              {isRetakingDiagnostic && previousMastery !== null && (
-                                <>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400 line-through">
-                                    {previousMastery}%
-                                  </span>
-                                  {hasImproved && (
-                                    <span className="text-xs font-bold text-green-600 dark:text-green-400">
-                                      +{improvement}%
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                              <span className={`text-sm font-bold ${
-                                isWeak ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-                              }`}>
-                                {masteryPercent}%
-                              </span>
-                            </div>
+                            <span className={`text-sm font-bold ${
+                              isWeak ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                            }`}>
+                              {masteryPercent}%
+                            </span>
                           </div>
                           <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-2">
                             <div 
@@ -571,11 +569,6 @@ function TopicSessionContent() {
                               style={{ width: `${Math.max(masteryPercent, 5)}%` }}
                             />
                           </div>
-                          {isRetakingDiagnostic && hasImproved && (
-                            <p className="text-xs text-green-600 dark:text-green-400 mt-2 font-medium">
-                              🎉 Great improvement! You&apos;ve mastered this skill better.
-                            </p>
-                          )}
                         </div>
                       );
                     })}
@@ -585,30 +578,28 @@ function TopicSessionContent() {
 
               {/* Next Steps */}
               <div className="text-center">
-                {showRetakeDiagnostic ? (
+                {/* Show different messages based on final quiz pass/fail */}
+                {(topicData.state === 'final_quiz' || topicData.state === 'final') && !finalQuizPassed ? (
                   <div className="space-y-4">
-                    <div className="bg-[#f5d5cb] dark:bg-[#5a4a45] rounded-xl p-6 border-2 border-[#c09080] dark:border-[#d4c4dc]">
+                    <div className="bg-[#fef3c7] dark:bg-[#78350f] rounded-xl p-6 border-2 border-[#f59e0b] dark:border-[#fbbf24]">
                       <div className="text-4xl mb-3">🔄</div>
-                      <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
-                        Retake the Diagnostic Quiz
+                      <h3 className="text-xl font-bold text-[#92400e] dark:text-[#fef3c7] mb-2">
+                        Almost There!
                       </h3>
-                      <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mb-4">
-                        Now that you&apos;ve completed the final assessment, retake the diagnostic quiz to update your mastery scores and see how much you&apos;ve improved!
+                      <p className="text-sm text-[#78350f] dark:text-[#fde68a] mb-4">
+                        You need to get all questions correct to complete this module. Review the incorrect answers above and try again!
                       </p>
-                      <div className="flex gap-3 justify-center">
-                        <button
-                          onClick={handleRetakeDiagnostic}
-                          className="px-6 py-3 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg font-semibold transition-all"
-                        >
-                          📝 Retake Diagnostic
-                        </button>
-                        <button
-                          onClick={handleSkipRetake}
-                          className="px-6 py-3 bg-[#e8e3d3] dark:bg-[#4a4a4a] text-[#2d2d2d] dark:text-[#e8e3d3] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#5a5a5a] font-semibold transition-colors"
-                        >
-                          Skip for Now
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setShowResults(false);
+                          setAnswers({});
+                          setCurrentQuestionIndex(0);
+                          setQuizScore(null);
+                        }}
+                        className="px-6 py-3 bg-[#f59e0b] hover:bg-[#d97706] text-white rounded-lg font-semibold transition-all"
+                      >
+                        🔁 Retake Final Quiz
+                      </button>
                     </div>
                   </div>
                 ) : (
@@ -617,14 +608,16 @@ function TopicSessionContent() {
                       onClick={handleContinueAfterQuiz}
                       className="px-8 py-4 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-xl hover:shadow-lg font-semibold text-lg transition-all"
                     >
-                      {isRetakingDiagnostic ? '💬 Continue to Discussion' : currentView === 'diagnostic' ? '💬 Continue to Discussion' : '🎉 View Roadmap'}
+                      {topicData.state === 'completed' ? '🎉 Back to Dashboard' : currentView === 'diagnostic' ? '💬 Continue to Discussion' : '🎉 View Roadmap'}
                     </button>
                     <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mt-4">
-                      {isRetakingDiagnostic
-                        ? 'Your updated mastery scores have been recorded!'
+                      {topicData.state === 'completed'
+                        ? (quizScore.percent === 1 && currentView === 'diagnostic'
+                          ? 'You already know this material perfectly - no learning needed!'
+                          : 'Congratulations on completing this topic!')
                         : currentView === 'diagnostic' 
                         ? 'Next: Discuss this topic with an AI tutor to strengthen your understanding'
-                        : 'Congratulations on completing this topic!'}
+                        : 'Great job! Continue to the next step.'}
                     </p>
                   </>
                 )}
