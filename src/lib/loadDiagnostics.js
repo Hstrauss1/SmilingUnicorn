@@ -31,6 +31,17 @@ export async function loadGeneratedCoursePacks() {
       }
       
       if (topicSession && topicSession.topic_session) {
+        // Skip course packs with placeholder subskills (incomplete generation)
+        const hasPlaceholderSubskills = topicSession.topic_session.subskills.some(
+          skill => skill.subskill_id === 'subskill_placeholder' || 
+                   skill.name.includes('Placeholder')
+        );
+        
+        if (hasPlaceholderSubskills) {
+          console.debug(`Skipping ${courseId}: Has placeholder subskills (incomplete topic extraction)`);
+          continue;
+        }
+        
         const topic = {
           id: topicSession.topic_session.topic_id,
           title: topicSession.topic_session.title,

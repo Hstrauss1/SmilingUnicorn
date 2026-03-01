@@ -125,7 +125,7 @@ function RoadmapContent() {
               const isLocked = false;
               
               let statusColor = "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600";
-              let statusIcon = "�"; // Default icon for not started
+              let statusIcon = "🔔"; // Default icon for not started
               
               if (isCompleted) {
                 statusColor = "bg-green-100 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-400";
