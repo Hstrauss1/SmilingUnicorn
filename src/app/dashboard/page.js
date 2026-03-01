@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getUserCoursePacks, getUserStats } from "@/lib/supabase/coursePacks";
+import { loadGeneratedCoursePacks } from "@/lib/loadDiagnostics";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-// Import the generated JSON file
+// Import generated JSON files from Python state machine
 import generatedTopicSession from "@/testPy/out/topic_session_after_learning.json";
 
 export default function DashboardPage() {
@@ -35,164 +36,55 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Mock data for demonstration when database is not set up
-  const loadMockData = () => {
-    // Transform the imported JSON to match our frontend schema format
-    const generatedTopic = {
-      id: generatedTopicSession.topic_session.topic_id,
-      title: generatedTopicSession.topic_session.title,
-      state: generatedTopicSession.topic_session.state, // Use actual state from JSON
-      completion_status: "in_progress",
-      subskills: generatedTopicSession.topic_session.subskills.map(skill => ({
-        name: skill.name,
-        mastery: skill.mastery
-      })),
-      diagnostic: generatedTopicSession.topic_session.diagnostic,
-      learning_session: generatedTopicSession.topic_session.learning_session,
-      final_quiz: generatedTopicSession.topic_session.final_quiz
-    };
+  // Load data from Python-generated JSON files
+  const loadMockData = async () => {
+    try {
+      // Load all generated course packs with Python-generated diagnostics
+      const generatedPacks = await loadGeneratedCoursePacks();
+      
+      if (generatedPacks.length > 0) {
+        console.log(`Loaded ${generatedPacks.length} Python-generated course packs with diagnostics`);
+        
+        // Calculate stats from generated data
+        const totalTopics = generatedPacks.reduce((sum, pack) => sum + pack.topic_sessions.length, 0);
+        const completedTopics = generatedPacks.reduce((sum, pack) => 
+          sum + pack.topic_sessions.filter(t => t.completion_status === 'completed').length, 0
+        );
+        
+        const mockStats = {
+          totalCoursePacks: generatedPacks.length,
+          totalTopics: totalTopics,
+          completedTopics: completedTopics,
+          averageProgress: Math.round(generatedPacks.reduce((sum, pack) => sum + pack.progress, 0) / generatedPacks.length),
+          currentStreak: 0
+        };
 
-    const mockCoursePacks = [
-      {
-        id: generatedTopicSession.course_pack_id,
-        title: "Introduction to C Programming",
-        document_name: "Class6&7-Pointers_pptx.pdf",
-        progress: 45,
-        status: 'in_progress',
-        topic_sessions: [
-          generatedTopic,
-          {
-            id: 'mock-topic-1',
-            title: "Control Structures",
-            state: "completed",
-            completion_status: "completed",
-            subskills: [
-              { name: "If/Else Statements", mastery: 0.9 },
-              { name: "For/While Loops", mastery: 0.85 }
-            ]
-          },
-          {
-            id: 'mock-topic-2',
-            title: "Arrays and Memory Management",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: []
-          }
-        ]
-      },
-      {
-        id: 'mock-1',
-        title: "Machine Learning Fundamentals",
-        document_name: "ml-textbook.pdf",
-        progress: 35,
-        status: 'in_progress',
-        topic_sessions: [
-          {
-            id: 1,
-            title: "Introduction to Machine Learning",
-            state: "completed",
-            completion_status: "completed",
-            subskills: [
-              { name: "What is ML?", mastery: 0.9 },
-              { name: "Types of ML", mastery: 0.85 },
-              { name: "Applications", mastery: 0.95 }
-            ]
-          },
-          {
-            id: 2,
-            title: "Data Preprocessing",
-            state: "learning_session",
-            completion_status: "in_progress",
-            subskills: [
-              { name: "Data Cleaning", mastery: 0.7 },
-              { name: "Feature Scaling", mastery: 0.6 },
-              { name: "Data Transformation", mastery: 0.5 }
-            ]
-          },
-          {
-            id: 3,
-            title: "Supervised Learning",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: [
-              { name: "Linear Regression", mastery: 0 },
-              { name: "Classification", mastery: 0 },
-              { name: "Model Evaluation", mastery: 0 }
-            ]
-          },
-          {
-            id: 4,
-            title: "Unsupervised Learning",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: []
-          },
-          {
-            id: 5,
-            title: "Neural Networks",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: []
-          }
-        ]
-      },
-      {
-        id: 'mock-2',
-        title: "Web Development Bootcamp",
-        document_name: "web-dev-course.pdf",
-        progress: 10,
-        status: 'in_progress',
-        topic_sessions: [
-          {
-            id: 6,
-            title: "HTML & CSS Basics",
-            state: "completed",
-            completion_status: "completed",
-            subskills: [
-              { name: "HTML Tags", mastery: 0.9 },
-              { name: "CSS Styling", mastery: 0.8 },
-              { name: "Flexbox", mastery: 0.85 }
-            ]
-          },
-          {
-            id: 7,
-            title: "JavaScript Fundamentals",
-            state: "learning_session",
-            completion_status: "in_progress",
-            subskills: [
-              { name: "Variables & Types", mastery: 0.6 },
-              { name: "Functions", mastery: 0.5 },
-              { name: "DOM Manipulation", mastery: 0.3 }
-            ]
-          },
-          {
-            id: 8,
-            title: "React JS",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: []
-          }
-        ]
+        const mockActivity = generatedPacks.slice(0, 3).map(pack => ({
+          action: "Generated", 
+          item: pack.title, 
+          created_at: new Date().toISOString() 
+        }));
+
+        setCoursePacks(generatedPacks);
+        setSelectedPack(generatedPacks[0]);
+        setStats(mockStats);
+      } else {
+        console.warn('No Python-generated course packs found, system needs PDF uploads');
+        setCoursePacks([]);
+        setSelectedPack(null);
+        setStats({
+          totalCoursePacks: 0,
+          totalTopics: 0,
+          completedTopics: 0,
+          averageProgress: 0,
+          currentStreak: 0
+        });
       }
-    ];
-
-    const mockStats = {
-      totalCoursePacks: 3,
-      totalTopics: 11,
-      completedTopics: 3,
-      averageProgress: 22,
-      currentStreak: 3
-    };
-
-    const mockActivity = [
-      { action: "Completed", item: "Introduction to Machine Learning", created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
-      { action: "Started", item: "Data Preprocessing module", created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() },
-      { action: "Uploaded", item: "ml-textbook.pdf", created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() }
-    ];
-
-    setCoursePacks(mockCoursePacks);
-    setSelectedPack(mockCoursePacks[0]);
-    setStats(mockStats);
+    } catch (error) {
+      console.error('Error loading generated course packs:', error);
+      setCoursePacks([]);
+      setSelectedPack(null);
+    }
   };
 
   useEffect(() => {
@@ -319,7 +211,7 @@ export default function DashboardPage() {
               Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0]}! Continue your learning journey.
             </p>
           </div>
-          
+
           {/* Course Pack Selector (if multiple packs) */}
           {coursePacks.length > 1 && (
             <div className="mb-6 relative w-full md:w-96" ref={dropdownRef}>
