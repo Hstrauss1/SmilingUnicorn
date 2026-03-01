@@ -112,11 +112,11 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">LP</span>
+              <span className="text-white font-bold text-2xl">OE</span>
             </div>
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {isLogin ? "Welcome Back" : "Join LearnPath AI"}
+            {isLogin ? "Welcome Back" : "Join OpenEducation"}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
             {isLogin 

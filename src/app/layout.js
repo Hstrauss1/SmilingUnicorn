@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "LearnPath AI - Transform Documents into Learning Roadmaps",
+  title: "OpenEducation- Transform Documents into Learning Roadmaps",
   description: "Upload your documents and let AI create personalized learning roadmaps tailored to your goals.",
 };
 
