@@ -457,10 +457,10 @@ export default function DashboardPage() {
                     <span className="text-2xl">📤</span>
                     <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">Upload New Document</span>
                   </Link>
-                  <button className="w-full flex items-center gap-3 p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] transition-colors">
+                  {/* <button className="w-full flex items-center gap-3 p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] transition-colors">
                     <span className="text-2xl">📊</span>
                     <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">View Analytics</span>
-                  </button>
+                  </button> */}
                   <button className="w-full flex items-center gap-3 p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] transition-colors">
                     <span className="text-2xl">⚙️</span>
                     <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">Settings</span>
