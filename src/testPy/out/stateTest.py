@@ -206,6 +206,136 @@ def build_diagnostic_quiz(topic_session_obj, chunk_map, questions_per_subskill=2
     ts["topic_session"]["state"] = "diagnostic"
     return ts
 
+def grade_diagnostic(topic_session_obj, submitted_answers):
+    ts = deepcopy(topic_session_obj)
+    questions = ts["topic_session"]["diagnostic"]["questions"]
+
+    ans_map = {a["question_id"]: a["answer"] for a in submitted_answers}
+
+    per_question = []
+    weak_subskills = set()
+    num_correct = 0
+
+    for q in questions:
+        qid = q["question_id"]
+        correct = q["correct_answer"]
+        given = ans_map.get(qid, "")
+
+        is_correct = given.strip() == correct.strip()
+        if is_correct:
+            num_correct += 1
+        else:
+            weak_subskills.add(q["subskill_id"])
+
+        per_question.append({
+            "question_id": qid,
+            "is_correct": is_correct,
+            "error_type": None if is_correct else ERROR_TYPE_DEFAULT,
+            "confidence": 0.6 if not is_correct else 0.0,
+            "notes": "" if is_correct else "Missed diagnostic question."
+        })
+
+    total = len(questions)
+    percent = num_correct / total if total else 0.0
+
+    ts["topic_session"]["diagnostic"]["submission"] = {
+        "answers": submitted_answers,
+        "score": {
+            "num_correct": num_correct,
+            "num_total": total,
+            "percent": percent,
+        },
+        "analysis": {
+            "per_question": per_question,
+            "weak_subskills": list(weak_subskills),
+            "suspected_prereq_topics": []
+        }
+    }
+
+    return ts
+
+def build_learning_modules(topic_session_obj, chunk_map):
+    ts = deepcopy(topic_session_obj)
+
+    weak = ts["topic_session"]["diagnostic"]["submission"]["analysis"]["weak_subskills"]
+    subskills = ts["topic_session"]["subskills"]
+
+    sub_by_id = {s["subskill_id"]: s for s in subskills}
+
+    modules = []
+
+    for sid in weak:
+        s = sub_by_id.get(sid)
+        if not s:
+            continue
+
+        modules.append({
+            "module_id": f"learn_{sid}",
+            "subskill_id": sid,
+            "title": f"Review: {s['name']}",
+            "explanation": f"Review the concept: {s['name']}",
+            "worked_example": {
+                "prompt": f"Example for {s['name']}",
+                "solution": "Example solution."
+            },
+            "quick_check": {
+                "question_id": f"qc_{sid}",
+                "type": "mcq",
+                "prompt": f"Quick check for {s['name']}",
+                "choices": ["A", "B", "C", "D"],
+                "correct_answer": "A"
+            },
+            "evidence_chunk_ids": s.get("evidence_chunk_ids", [])
+        })
+
+    ts["topic_session"]["learning_session"]["active_modules"] = modules
+    ts["topic_session"]["state"] = "learning"
+
+    return ts
+
+
+def build_final_quiz_from_weak_subskills(topic_session_obj, chunk_map):
+    ts = deepcopy(topic_session_obj)
+
+    weak = ts["topic_session"]["diagnostic"]["submission"]["analysis"]["weak_subskills"]
+    subskills = ts["topic_session"]["subskills"]
+    sub_by_id = {s["subskill_id"]: s for s in subskills}
+
+    questions = []
+    q_index = 1
+
+    for sid in weak:
+        s = sub_by_id.get(sid)
+        if not s:
+            continue
+
+        questions.append({
+            "question_id": f"f{q_index}",
+            "subskill_id": sid,
+            "type": "mcq",
+            "difficulty": 2,
+            "prompt": f"Final check: {s['name']}",
+            "choices": ["A", "B", "C", "D"],
+            "correct_answer": "A"
+        })
+        q_index += 1
+
+    ts["topic_session"]["final_quiz"] = {
+        "quiz_id": "final_v1",
+        "questions": questions,
+        "submission": {
+            "answers": [],
+            "score": {"num_correct": 0, "num_total": len(questions), "percent": 0.0},
+            "passed": False,
+            "weak_subskills": []
+        }
+    }
+
+    ts["topic_session"]["state"] = "final"
+
+    return ts
+
+
 def run_state_machine(topic_session: dict, chunk_map: dict, user_input=None):
     """
     user_input:
