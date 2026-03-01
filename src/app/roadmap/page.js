@@ -72,6 +72,12 @@ function RoadmapContent() {
       setLoading(false);
       setCoursePack(null);
     }
+    if (packId) {
+      loadData();
+    } else {
+      setLoading(false);
+      setCoursePack(null);
+    }
   }, [packId]);
 
   if (loading) {
@@ -150,6 +156,7 @@ function RoadmapContent() {
               const isLocked = false;
               
               let statusColor = "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600";
+              let statusIcon = "🔔"; // Default icon for not started
               let statusIcon = "🔔"; // Default icon for not started
               
               if (isCompleted) {

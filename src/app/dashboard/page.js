@@ -64,6 +64,34 @@ export default function DashboardPage() {
           item: pack.title, 
           created_at: new Date().toISOString() 
         }));
+  // Load data from Python-generated JSON files
+  const loadMockData = async () => {
+    try {
+      // Load all generated course packs with Python-generated diagnostics
+      const generatedPacks = await loadGeneratedCoursePacks();
+      
+      if (generatedPacks.length > 0) {
+        console.log(`Loaded ${generatedPacks.length} Python-generated course packs with diagnostics`);
+        
+        // Calculate stats from generated data
+        const totalTopics = generatedPacks.reduce((sum, pack) => sum + pack.topic_sessions.length, 0);
+        const completedTopics = generatedPacks.reduce((sum, pack) => 
+          sum + pack.topic_sessions.filter(t => t.completion_status === 'completed').length, 0
+        );
+        
+        const mockStats = {
+          totalCoursePacks: generatedPacks.length,
+          totalTopics: totalTopics,
+          completedTopics: completedTopics,
+          averageProgress: Math.round(generatedPacks.reduce((sum, pack) => sum + pack.progress, 0) / generatedPacks.length),
+          currentStreak: 0
+        };
+
+        const mockActivity = generatedPacks.slice(0, 3).map(pack => ({
+          action: "Generated", 
+          item: pack.title, 
+          created_at: new Date().toISOString() 
+        }));
 
         setCoursePacks(generatedPacks);
         setSelectedPack(generatedPacks[0]);
