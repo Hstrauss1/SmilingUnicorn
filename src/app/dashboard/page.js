@@ -258,8 +258,8 @@ export default function DashboardPage() {
 
   const getTopicStatus = (state, completionStatus) => {
     if (completionStatus === 'completed') return 'completed';
-    if (state === 'learning_session' || state === 'diagnostic') return 'in-progress';
-    return 'locked';
+    if (state === 'learning_session' || state === 'diagnostic' || state === 'final' || state === 'final_quiz') return 'in-progress';
+    return 'in-progress'; // No topics should be locked by default
   };
 
   if (loading) {
@@ -538,25 +538,17 @@ export default function DashboardPage() {
                           </div>
                           
                           <div className="mt-3">
-                            {isLocked ? (
-                              <button
-                                disabled
-                                className="w-full py-2 rounded-lg font-medium transition-colors text-sm bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                              >
-                                🔒 Locked
-                              </button>
-                            ) : (
-                              <Link
-                                href={`/topic/${topic.id}?packId=${selectedPack.id}`}
-                                className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
-                                  isCompleted
-                                    ? "bg-green-600 text-white hover:bg-green-700"
-                                    : "bg-blue-600 text-white hover:bg-blue-700"
-                                }`}
-                              >
-                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' ? "🎯 Take Final Quiz" : "▶️ Start"}
-                              </Link>
-                            )}
+                            {/* All topics are accessible - no locked topics */}
+                            <Link
+                              href={`/topic/${topic.id}?packId=${selectedPack.id}`}
+                              className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
+                                isCompleted
+                                  ? "bg-green-600 text-white hover:bg-green-700"
+                                  : "bg-blue-600 text-white hover:bg-blue-700"
+                              }`}
+                            >
+                              {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Quiz" : "▶️ Start"}
+                            </Link>
                           </div>
                         </div>
                       );

@@ -5,8 +5,6 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/client";
-import generatedTopicSession from "@/testPy/out/topic_session_after_learning.json";
-import diagnosticSession from "@/testPy/out/topic_session_intro_c_pointers.json";
 
 function TopicSessionContent() {
   const router = useRouter();
@@ -29,34 +27,66 @@ function TopicSessionContent() {
     const loadTopicData = async () => {
       setLoading(true);
       
-      // Simulate fetching topic session data
-      setTimeout(() => {
-        // For now, use mock data based on topicId
-        let mockTopicData;
+      try {
+        // In production, this would fetch from Supabase:
+        // const { data, error } = await supabase
+        //   .from('topic_sessions')
+        //   .select('*')
+        //   .eq('topic_id', topicId)
+        //   .eq('course_pack_id', packId)
+        //   .single();
         
-        if (topicId === generatedTopicSession.topic_session.topic_id) {
-          mockTopicData = generatedTopicSession.topic_session;
+        // For now, dynamically import the topic session based on topicId
+        let topicSessionData;
+        
+        try {
+          // Try to load the specific topic session file
+          const topicModule = await import(`@/testPy/out/topic_session_${topicId}.json`);
+          topicSessionData = topicModule.default.topic_session;
+        } catch (importError) {
+          // If specific file not found, try loading from the course pack file
+          try {
+            const courseModule = await import(`@/testPy/out/course_${packId}_topic_session.json`);
+            topicSessionData = courseModule.default.topic_session;
+          } catch (courseImportError) {
+            console.error('Could not load topic session data:', importError, courseImportError);
+            topicSessionData = null;
+          }
+        }
+        
+        if (topicSessionData) {
+          setTopicData(topicSessionData);
+          
+          // Determine which view to show based on state and quiz completion
+          if (topicSessionData.state === 'diagnostic') {
+            // Check if diagnostic has been completed
+            const hasSubmission = topicSessionData.diagnostic?.submission?.answers?.length > 0;
+            if (hasSubmission && topicSessionData.learning_session?.active_modules?.length > 0) {
+              setCurrentView('learning');
+            } else {
+              setCurrentView('diagnostic');
+            }
+          } else if (topicSessionData.state === 'learning_session') {
+            setCurrentView('learning');
+          } else if (topicSessionData.state === 'final') {
+            setCurrentView('final_quiz');
+          } else {
+            // Default to diagnostic if state is unclear
+            setCurrentView('diagnostic');
+          }
         } else {
-          mockTopicData = diagnosticSession.topic_session;
+          setTopicData(null);
         }
-        
-        setTopicData(mockTopicData);
-        
-        // Determine which view to show based on state
-        if (mockTopicData.state === 'diagnostic') {
-          setCurrentView('diagnostic');
-        } else if (mockTopicData.state === 'learning_session') {
-          setCurrentView('learning');
-        } else if (mockTopicData.state === 'final') {
-          setCurrentView('final_quiz');
-        }
-        
+      } catch (error) {
+        console.error('Error loading topic data:', error);
+        setTopicData(null);
+      } finally {
         setLoading(false);
-      }, 500);
+      }
     };
     
     loadTopicData();
-  }, [topicId]);
+  }, [topicId, packId]);
 
   const handleAnswerSelect = (questionId, answer) => {
     setAnswers({
@@ -69,8 +99,10 @@ function TopicSessionContent() {
     if (!topicData) return;
     
     const questions = currentView === 'diagnostic' 
-      ? topicData.diagnostic.questions 
-      : topicData.final_quiz.questions;
+      ? topicData.diagnostic?.questions || []
+      : topicData.final_quiz?.questions || [];
+    
+    if (questions.length === 0) return;
     
     let correctCount = 0;
     questions.forEach(q => {
@@ -91,7 +123,16 @@ function TopicSessionContent() {
 
   const handleContinueAfterQuiz = () => {
     if (currentView === 'diagnostic') {
-      setCurrentView('learning');
+      // Check if learning modules are available
+      const hasLearningModules = topicData?.learning_session?.active_modules?.length > 0;
+      
+      if (hasLearningModules) {
+        setCurrentView('learning');
+      } else {
+        // Skip directly to final quiz if no learning modules
+        setCurrentView('final_quiz');
+      }
+      
       setShowResults(false);
       setCurrentQuestionIndex(0);
       setAnswers({});
@@ -102,7 +143,8 @@ function TopicSessionContent() {
   };
 
   const handleNextModule = () => {
-    if (currentModuleIndex < topicData.learning_session.active_modules.length - 1) {
+    const activeModules = topicData?.learning_session?.active_modules || [];
+    if (currentModuleIndex < activeModules.length - 1) {
       setCurrentModuleIndex(currentModuleIndex + 1);
     } else {
       setCurrentView('final_quiz');
@@ -127,14 +169,30 @@ function TopicSessionContent() {
       <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
         <Header />
         <main className="grow flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Topic Not Found</h2>
-            <button 
-              onClick={() => router.push(`/roadmap?packId=${packId}`)}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Back to Roadmap
-            </button>
+          <div className="max-w-md mx-auto px-4 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+              <div className="text-6xl mb-4">❌</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                Topic Not Found
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                We couldn&apos;t find the topic session data for this topic. The content may not have been generated yet.
+              </p>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => router.push('/dashboard')}
+                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                >
+                  Return to Dashboard
+                </button>
+                <button 
+                  onClick={() => router.push(`/roadmap?packId=${packId}`)}
+                  className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold transition-colors"
+                >
+                  Back to Roadmap
+                </button>
+              </div>
+            </div>
           </div>
         </main>
         <Footer />
@@ -145,8 +203,45 @@ function TopicSessionContent() {
   // Render Diagnostic or Final Quiz
   if ((currentView === 'diagnostic' || currentView === 'final_quiz') && !showResults) {
     const questions = currentView === 'diagnostic' 
-      ? topicData.diagnostic.questions 
-      : topicData.final_quiz.questions;
+      ? topicData.diagnostic?.questions || []
+      : topicData.final_quiz?.questions || [];
+    
+    // If no questions available, show error
+    if (questions.length === 0) {
+      return (
+        <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+          <Header />
+          <main className="grow flex items-center justify-center">
+            <div className="max-w-md mx-auto px-4 text-center">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+                <div className="text-6xl mb-4">📝</div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                  {currentView === 'diagnostic' ? 'Diagnostic Quiz' : 'Final Quiz'} Not Available
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  The {currentView === 'diagnostic' ? 'diagnostic' : 'final'} quiz questions haven&apos;t been generated yet for this topic. Please check back later or contact support.
+                </p>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                  >
+                    Return to Dashboard
+                  </button>
+                  <button 
+                    onClick={() => router.push(`/roadmap?packId=${packId}`)}
+                    className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold transition-colors"
+                  >
+                    Back to Roadmap
+                  </button>
+                </div>
+              </div>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      );
+    }
     
     const currentQuestion = questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
@@ -265,8 +360,8 @@ function TopicSessionContent() {
   // Render Quiz Results
   if (showResults && quizScore) {
     const questions = currentView === 'diagnostic' 
-      ? topicData.diagnostic.questions 
-      : topicData.final_quiz.questions;
+      ? topicData.diagnostic?.questions || []
+      : topicData.final_quiz?.questions || [];
 
     return (
       <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -325,7 +420,11 @@ function TopicSessionContent() {
                 onClick={handleContinueAfterQuiz}
                 className="w-full px-8 py-4 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700 shadow-sm text-lg"
               >
-                {currentView === 'diagnostic' ? 'Continue to Learning Modules' : 'Back to Roadmap'}
+                {currentView === 'diagnostic' 
+                  ? (topicData?.learning_session?.active_modules?.length > 0 
+                      ? 'Continue to Learning Modules' 
+                      : 'Continue to Final Quiz')
+                  : 'Back to Roadmap'}
               </button>
             </div>
           </div>
@@ -337,9 +436,48 @@ function TopicSessionContent() {
   }
 
   // Render Learning Session
-  if (currentView === 'learning' && topicData.learning_session.active_modules.length > 0) {
-    const currentModule = topicData.learning_session.active_modules[currentModuleIndex];
-    const progress = ((currentModuleIndex + 1) / topicData.learning_session.active_modules.length) * 100;
+  if (currentView === 'learning') {
+    const activeModules = topicData.learning_session?.active_modules || [];
+    
+    // If no modules, show error with option to skip to final quiz
+    if (activeModules.length === 0) {
+      return (
+        <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+          <Header />
+          <main className="grow flex items-center justify-center">
+            <div className="max-w-md mx-auto px-4 text-center">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+                <div className="text-6xl mb-4">📚</div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                  Learning Modules Not Available
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  No learning modules have been generated for this topic yet. You can skip to the final quiz or return to the dashboard.
+                </p>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setCurrentView('final_quiz')}
+                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                  >
+                    Skip to Final Quiz
+                  </button>
+                  <button 
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold transition-colors"
+                  >
+                    Return to Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      );
+    }
+    
+    const currentModule = activeModules[currentModuleIndex];
+    const progress = ((currentModuleIndex + 1) / activeModules.length) * 100;
 
     return (
       <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -366,7 +504,7 @@ function TopicSessionContent() {
               <div className="mb-8">
                 <div className="flex items-center justify-between text-sm mb-2">
                   <span className="text-gray-700 dark:text-gray-300">
-                    Module {currentModuleIndex + 1} of {topicData.learning_session.active_modules.length}
+                    Module {currentModuleIndex + 1} of {activeModules.length}
                   </span>
                   <span className="font-semibold text-gray-900 dark:text-white">
                     {Math.round(progress)}%
@@ -415,7 +553,7 @@ function TopicSessionContent() {
                 onClick={handleNextModule}
                 className="w-full px-8 py-4 rounded-lg font-semibold transition-colors bg-purple-600 text-white hover:bg-purple-700 shadow-sm text-lg"
               >
-                {currentModuleIndex < topicData.learning_session.active_modules.length - 1 
+                {currentModuleIndex < activeModules.length - 1 
                   ? 'Next Module' 
                   : 'Continue to Final Quiz'}
               </button>
