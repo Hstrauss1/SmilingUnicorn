@@ -43,12 +43,15 @@ export default function DashboardPage() {
     const generatedTopic = {
       id: generatedTopicSession.topic_session.topic_id,
       title: generatedTopicSession.topic_session.title,
-      state: "learning_session", // or whatever state fits the UI best
+      state: generatedTopicSession.topic_session.state, // Use actual state from JSON
       completion_status: "in_progress",
       subskills: generatedTopicSession.topic_session.subskills.map(skill => ({
         name: skill.name,
         mastery: skill.mastery
-      }))
+      })),
+      diagnostic: generatedTopicSession.topic_session.diagnostic,
+      learning_session: generatedTopicSession.topic_session.learning_session,
+      final_quiz: generatedTopicSession.topic_session.final_quiz
     };
 
     const mockCoursePacks = [
@@ -56,7 +59,7 @@ export default function DashboardPage() {
         id: generatedTopicSession.course_pack_id,
         title: "Introduction to C Programming",
         document_name: "Class6&7-Pointers_pptx.pdf",
-        progress: 15,
+        progress: 45,
         status: 'in_progress',
         topic_sessions: [
           generatedTopic,
@@ -72,7 +75,7 @@ export default function DashboardPage() {
           },
           {
             id: 'mock-topic-2',
-            title: "Arrays and Pointers",
+            title: "Arrays and Memory Management",
             state: "diagnostic",
             completion_status: "not_started",
             subskills: []
@@ -255,8 +258,8 @@ export default function DashboardPage() {
 
   const getTopicStatus = (state, completionStatus) => {
     if (completionStatus === 'completed') return 'completed';
-    if (state === 'learning_session' || state === 'diagnostic') return 'in-progress';
-    return 'locked';
+    if (state === 'learning_session' || state === 'diagnostic' || state === 'final' || state === 'final_quiz') return 'in-progress';
+    return 'in-progress'; // No topics should be locked by default
   };
 
   if (loading) {
@@ -535,25 +538,17 @@ export default function DashboardPage() {
                           </div>
                           
                           <div className="mt-3">
-                            {isLocked ? (
-                              <button
-                                disabled
-                                className="w-full py-2 rounded-lg font-medium transition-colors text-sm bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                              >
-                                🔒 Locked
-                              </button>
-                            ) : (
-                              <Link
-                                href={`/roadmap?packId=${selectedPack.id}`}
-                                className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
-                                  isCompleted
-                                    ? "bg-green-600 text-white hover:bg-green-700"
-                                    : "bg-blue-600 text-white hover:bg-blue-700"
-                                }`}
-                              >
-                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : "▶️ Continue Learning"}
-                              </Link>
-                            )}
+                            {/* All topics are accessible - no locked topics */}
+                            <Link
+                              href={`/topic/${topic.id}?packId=${selectedPack.id}`}
+                              className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
+                                isCompleted
+                                  ? "bg-green-600 text-white hover:bg-green-700"
+                                  : "bg-blue-600 text-white hover:bg-blue-700"
+                              }`}
+                            >
+                              {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Quiz" : "▶️ Start"}
+                            </Link>
                           </div>
                         </div>
                       );

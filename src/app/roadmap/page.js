@@ -32,7 +32,7 @@ function RoadmapContent() {
           const generatedTopic = {
             id: generatedTopicSession.topic_session.topic_id,
             title: generatedTopicSession.topic_session.title,
-            state: "learning_session",
+            state: generatedTopicSession.topic_session.state, // Use actual state from JSON
             completion_status: "in_progress",
             subskills: generatedTopicSession.topic_session.subskills.map(skill => ({
               name: skill.name,
@@ -245,10 +245,11 @@ function RoadmapContent() {
             {coursePack.topic_sessions.map((topic, index) => {
               const isCompleted = topic.completion_status === 'completed';
               const isInProgress = topic.completion_status === 'in_progress';
-              const isLocked = topic.completion_status === 'not_started';
+              // Topics should never be locked - all topics are accessible
+              const isLocked = false;
               
               let statusColor = "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600";
-              let statusIcon = "🔒";
+              let statusIcon = "�"; // Default icon for not started
               
               if (isCompleted) {
                 statusColor = "bg-green-100 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-400";
@@ -281,18 +282,17 @@ function RoadmapContent() {
                         </div>
                       </div>
                       
-                      {!isLocked && (
-                        <button 
-                          onClick={() => console.log('Navigate to topic session', topic.id)}
-                          className={`px-6 py-2 rounded-xl font-semibold transition-colors ${
-                            isCompleted 
-                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' 
-                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
-                          }`}
-                        >
-                          {isCompleted ? 'Review' : topic.state === 'diagnostic' ? 'Start Diagnostic' : 'Continue'}
-                        </button>
-                      )}
+                      {/* All topics are accessible - no locked topics */}
+                      <button 
+                        onClick={() => router.push(`/topic/${topic.id}?packId=${packId}`)}
+                        className={`px-6 py-2 rounded-xl font-semibold transition-colors ${
+                          isCompleted 
+                            ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                        }`}
+                      >
+                        {isCompleted ? 'Review' : topic.state === 'diagnostic' ? 'Start Diagnostic' : 'Continue'}
+                      </button>
                     </div>
 
                     {topic.subskills && topic.subskills.length > 0 ? (
