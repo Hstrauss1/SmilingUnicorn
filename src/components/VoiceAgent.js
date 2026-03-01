@@ -43,22 +43,17 @@ export default function VoiceAgent({ agentId, topicContext }) {
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Start the conversation session
-      const conversation = await Conversation.startSession({
+      // Start the conversation session with language configuration
+      const sessionConfig = {
         agentId: agentId || process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID,
-        // Override agent settings to use selected language
-        overrides: {
-          agent: {
-            language: selectedLanguage,
-          },
-        },
         // Pass context to the agent
         dynamicVariables: {
           languageName: SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English",
           topicContext: topicContext || "general learning assistance",
+          selectedLanguage: selectedLanguage,
         },
         onConnect: () => {
-          console.log("Voice agent connected");
+          console.log("Voice agent connected with language:", selectedLanguage);
           setIsActive(true);
           setIsConnecting(false);
         },
@@ -69,7 +64,13 @@ export default function VoiceAgent({ agentId, topicContext }) {
         },
         onError: (err) => {
           console.error("Voice agent error:", err);
-          setError(err.message || "Connection failed");
+          // Provide more specific error message for language issues
+          const errorMsg = err.message || "Connection failed";
+          if (errorMsg.includes("language") || selectedLanguage !== "en") {
+            setError(`${errorMsg}. Make sure the language "${SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name}" is enabled in your ElevenLabs agent settings.`);
+          } else {
+            setError(errorMsg);
+          }
           setIsActive(false);
           setIsConnecting(false);
         },
@@ -77,8 +78,18 @@ export default function VoiceAgent({ agentId, topicContext }) {
           // mode.mode can be "speaking" or "listening"
           setIsSpeaking(mode.mode === "speaking");
         },
-      });
+      };
 
+      // Only add overrides if not using default English
+      if (selectedLanguage !== "en") {
+        sessionConfig.overrides = {
+          agent: {
+            language: selectedLanguage,
+          },
+        };
+      }
+
+      const conversation = await Conversation.startSession(sessionConfig);
       conversationRef.current = conversation;
     } catch (err) {
       console.error("Failed to start voice agent:", err);
