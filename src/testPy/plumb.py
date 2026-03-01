@@ -96,24 +96,24 @@ def main(pdf_dir: str, title: str, output_dir: str = None):
             f.write(json.dumps(c) + "\n")
 
     # Build skeleton topic session
-    session = build_topic_session_skeleton(course_pack_id, title)
+    #session = build_topic_session_skeleton(course_pack_id, title)
 
     # Optional: attach all chunk ids to a placeholder subskill so you can demo citations now
     # You can delete this once you generate real subskills.
-    session["topic_session"]["subskills"] = [{
-        "subskill_id": "subskill_placeholder",
-        "name": "Placeholder (replace after topic extraction)",
-        "mastery": 0.0,
-        "evidence_chunk_ids": [c["chunk_id"] for c in all_chunks[:20]]  # cap for size
-    }]
+    #session["topic_session"]["subskills"] = [{
+    #    "subskill_id": "subskill_placeholder",
+    #    "name": "Placeholder (replace after topic extraction)",
+    #    "mastery": 0.0,
+    #    "evidence_chunk_ids": [c["chunk_id"] for c in all_chunks[:20]]  # cap for size
+    #}]
 
-    session_path = os.path.join(output_dir, f"{course_pack_id}_topic_session.json")
-    with open(session_path, "w", encoding="utf-8") as f:
-        json.dump(session, f, indent=2)
+    #session_path = os.path.join(output_dir, f"{course_pack_id}_topic_session.json")
+    #with open(session_path, "w", encoding="utf-8") as f:
+    #    json.dump(session, f, indent=2)
 
     print(f"SUCCESS: Generated {len(all_chunks)} chunks from {len([f for f in os.listdir(pdf_dir) if f.lower().endswith('.pdf')])} PDF files")
     print(f"CHUNKS_FILE: {chunks_path}")
-    print(f"SESSION_FILE: {session_path}")
+    #print(f"SESSION_FILE: {session_path}")
     print(f"COURSE_PACK_ID: {course_pack_id}")
 
 if __name__ == "__main__":
