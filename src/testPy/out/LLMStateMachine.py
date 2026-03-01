@@ -22,6 +22,8 @@ ERROR_TYPE_DEFAULT = "reasoning_error"
 # Keep evidence short to fit context window
 MAX_EVIDENCE_CHARS_PER_SUBSKILL = 2200
 MAX_EVIDENCE_SNIPPET_PER_CHUNK = 700
+MAX_CHUNKS_PER_SUBSKILL = 5
+MAX_CHARS_PER_CHUNK = 700
 
 
 # =========================
@@ -334,86 +336,95 @@ def build_final_quiz_llm(topic_session_obj: dict, chunk_map: Dict[str, str], que
     ts = ensure_schema_defaults(topic_session_obj)
 
     weak = ts["topic_session"]["diagnostic"]["submission"]["analysis"].get("weak_subskills", [])
-    sub_by_id = {s["subskill_id"]: s for s in ts["topic_session"]["subskills"]}
-
-    # If weak is empty, still build a final across all subskills
-    target = weak if weak else [s["subskill_id"] for s in ts["topic_session"]["subskills"]]
-
-    payload = []
-    for sid in target:
-        s = sub_by_id.get(sid)
-        if not s:
-            continue
-        evidence = _build_subskill_evidence(s, chunk_map)
-        payload.append({
-            "subskill_id": sid,
-            "subskill_name": s.get("name", ""),
-            "evidence": evidence
-        })
+    subskills = ts["topic_session"]["subskills"]
+    sub_by_id = {s["subskill_id"]: s for s in subskills}
 
     system = (
-        "You are an assessment writer. Return ONLY valid JSON.\n"
-        "Write final quiz MCQs grounded in the evidence.\n"
+        "Return ONLY valid JSON. No prose, no markdown, no code fences.\n"
+        "The first character must be '{'.\n"
+        "You are writing final quiz questions for EXACTLY ONE subskill.\n"
+        f"Return EXACTLY {questions_per_subskill} questions.\n"
         "Rules:\n"
-        "- Use provided evidence only\n"
+        "- difficulty should be 2\n"
         "- Exactly 4 choices\n"
         "- correct_answer must be one of the choices\n"
-        "- difficulty 2 or 3\n\n"
+        "- Keep prompt short (max 220 chars)\n"
+        "- Do not include multi-line code blocks; if code is needed, keep it to one line\n"
         "Schema:\n"
         "{\n"
         '  "questions": [\n'
-        "    {\n"
-        '      "subskill_id": "string",\n'
-        '      "type": "mcq",\n'
-        '      "difficulty": 2,\n'
-        '      "prompt": "string",\n'
-        '      "choices": ["a","b","c","d"],\n'
-        '      "correct_answer": "string"\n'
-        "    }\n"
+        '    {"subskill_id":"string","type":"mcq","difficulty":2,"prompt":"string","choices":["a","b","c","d"],"correct_answer":"string"}\n'
         "  ]\n"
         "}\n"
     )
 
-    user = json.dumps({"questions_per_subskill": questions_per_subskill, "subskills": payload}, indent=2)
-    out = llm_generate_json(system, user, temperature=0.0)
-    raw_qs = out.get("questions", [])
-
     questions = []
     q_index = 1
-    for rq in raw_qs:
-        if not isinstance(rq, dict):
-            continue
-        sid = (rq.get("subskill_id") or "").strip()
-        if sid not in target:
-            continue
-        choices = rq.get("choices", [])
-        ca = rq.get("correct_answer", "")
-        if not isinstance(choices, list) or len(choices) != 4 or ca not in choices:
+
+    for sid in weak:
+        s = sub_by_id.get(sid)
+        if not s:
             continue
 
-        questions.append({
-            "question_id": f"f{q_index}",
-            "subskill_id": sid,
-            "type": "mcq",
-            "difficulty": int(rq.get("difficulty", 2) or 2),
-            "prompt": rq.get("prompt", ""),
-            "choices": choices,
-            "correct_answer": ca,
-        })
-        q_index += 1
+        evidence = []
+        for cid in (s.get("evidence_chunk_ids") or [])[:MAX_CHUNKS_PER_SUBSKILL]:
+            txt = chunk_map.get(cid, "")
+            if txt.strip():
+                evidence.append({"chunk_id": cid, "text": _snippet(txt, MAX_CHARS_PER_CHUNK)})
 
-    if not questions:
-        raise RuntimeError("LLM returned no usable final questions.")
+        user = json.dumps(
+            {"subskill": {"subskill_id": sid, "name": s.get("name", "")}, "evidence": evidence},
+            indent=2,
+        )
+
+        out = llm_generate_json(system, user, temperature=0.0)
+        raw_qs = out.get("questions", []) if isinstance(out, dict) else []
+        if not isinstance(raw_qs, list):
+            raw_qs = []
+
+        kept = 0
+        for rq in raw_qs:
+            if kept >= questions_per_subskill:
+                break
+            if not isinstance(rq, dict):
+                continue
+            choices = rq.get("choices", [])
+            ca = rq.get("correct_answer", "")
+            if not isinstance(choices, list) or len(choices) != 4 or ca not in choices:
+                continue
+
+            questions.append(
+                {
+                    "question_id": f"f{q_index}",
+                    "subskill_id": sid,
+                    "type": "mcq",
+                    "difficulty": 2,
+                    "prompt": rq.get("prompt", ""),
+                    "choices": choices,
+                    "correct_answer": ca,
+                }
+            )
+            q_index += 1
+            kept += 1
+
+        if kept == 0:
+            questions.append(
+                {
+                    "question_id": f"f{q_index}",
+                    "subskill_id": sid,
+                    "type": "mcq",
+                    "difficulty": 2,
+                    "prompt": f"Final check: {s.get('name','')}",
+                    "choices": ["A", "B", "C", "D"],
+                    "correct_answer": "A",
+                }
+            )
+            q_index += 1
 
     ts["topic_session"]["final_quiz"] = {
         "quiz_id": "final_llm_v1",
         "questions": questions,
-        "submission": {
-            "answers": [],
-            "score": {"num_correct": 0, "num_total": len(questions), "percent": 0.0},
-            "passed": False,
-            "weak_subskills": [],
-        }
+        "submission": {"answers": [], "score": {"num_correct": 0, "num_total": len(questions), "percent": 0.0}, "passed": False, "weak_subskills": []},
     }
     ts["topic_session"]["state"] = "final"
     return ts
