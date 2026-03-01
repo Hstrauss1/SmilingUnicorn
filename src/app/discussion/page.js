@@ -27,6 +27,7 @@ function DiscussionContent() {
   
   // Get topic context from URL params
   const packId = searchParams.get('packId');
+  const topicId = searchParams.get('topicId');
   const topicTitle = searchParams.get('topicTitle') || 'Practice Session';
   
   // Timer state
@@ -118,9 +119,36 @@ function DiscussionContent() {
     }
     setIsActive(false);
     setIsSpeaking(false);
-    // Auto redirect after session ends
+    
+    // Mark discussion as complete and update state
+    if (packId) {
+      try {
+        const response = await fetch('/api/complete-discussion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            coursePackId: packId
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Discussion completed:', result);
+        }
+      } catch (error) {
+        console.error('Error completing discussion:', error);
+      }
+    }
+    
+    // Redirect to topic page to continue with next step
     setTimeout(() => {
-      redirectToRoadmap();
+      if (topicId && packId) {
+        router.push(`/topic/${topicId}?packId=${packId}`);
+      } else {
+        redirectToRoadmap();
+      }
     }, 2000);
   };
 

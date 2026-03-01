@@ -68,7 +68,7 @@ function TopicSessionContent() {
         if (topicSessionData) {
           setTopicData(topicSessionData);
           
-          // Determine which view to show based on state and quiz completion
+          // Determine which view to show based on state
           if (topicSessionData.state === 'diagnostic') {
             // Check if diagnostic has been completed
             const hasSubmission = topicSessionData.diagnostic?.submission?.answers?.length > 0;
@@ -77,9 +77,14 @@ function TopicSessionContent() {
             } else {
               setCurrentView('diagnostic');
             }
+          } else if (topicSessionData.state === 'discussion') {
+            // After diagnostic, redirect to discussion page
+            const topicTitle = encodeURIComponent(topicSessionData.title || 'Topic Discussion');
+            router.push(`/discussion?packId=${packId}&topicId=${topicId}&topicTitle=${topicTitle}`);
+            return;
           } else if (topicSessionData.state === 'learning_session') {
             setCurrentView('learning');
-          } else if (topicSessionData.state === 'final') {
+          } else if (topicSessionData.state === 'final' || topicSessionData.state === 'final_quiz') {
             setCurrentView('final_quiz');
           } else {
             // Default to diagnostic if state is unclear
@@ -97,7 +102,7 @@ function TopicSessionContent() {
     };
     
     loadTopicData();
-  }, [topicId, packId, supabase]);
+  }, [topicId, packId, supabase, router]);
 
   const handleAnswerSelect = (questionId, answer) => {
     setAnswers({
@@ -147,10 +152,6 @@ function TopicSessionContent() {
         const result = await response.json();
         console.log('Diagnostic submission result:', result);
 
-        // Update local state with the score from the API
-        setQuizScore(result.score);
-        setShowResults(true);
-
         // Reload the topic data to get updated mastery and learning modules
         const { data: { user } } = await supabase.auth.getUser();
         const { data } = await supabase
@@ -164,6 +165,9 @@ function TopicSessionContent() {
           setTopicData(pack.topic_session);
         }
 
+        // Redirect to discussion page immediately after diagnostic
+        router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
+
       } catch (error) {
         console.error('Error submitting diagnostic:', error);
         alert('Failed to submit diagnostic. Please try again.');
@@ -171,7 +175,7 @@ function TopicSessionContent() {
         setSubmittingQuiz(false);
       }
     } else {
-      // For final quiz, just calculate locally for now
+      // For final quiz, calculate score and redirect to discussion
       let correctCount = 0;
       questions.forEach(q => {
         if (answers[q.question_id] === q.correct_answer) {
@@ -185,29 +189,14 @@ function TopicSessionContent() {
         percent: (correctCount / questions.length) * 100
       };
       
-      setQuizScore(score);
-      setShowResults(true);
+      // Redirect to discussion page after final quiz
+      router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
     }
   };
 
   const handleContinueAfterQuiz = () => {
-    if (currentView === 'diagnostic') {
-      // Check if learning modules are available
-      const hasLearningModules = topicData?.learning_session?.active_modules?.length > 0;
-      
-      if (hasLearningModules) {
-        setCurrentView('learning');
-        setShowResults(false);
-        setCurrentQuestionIndex(0);
-        setAnswers({});
-        setQuizScore(null);
-      } else {
-        // Navigate to discussion page for voice practice
-        router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
-      }
-    } else if (currentView === 'final_quiz') {
-      router.push(`/roadmap?packId=${packId}`);
-    }
+    // Always redirect to discussion page after any quiz (diagnostic, learning modules, or final)
+    router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
   };
 
   const handleNextModule = () => {
@@ -215,8 +204,8 @@ function TopicSessionContent() {
     if (currentModuleIndex < activeModules.length - 1) {
       setCurrentModuleIndex(currentModuleIndex + 1);
     } else {
-      setCurrentView('final_quiz');
-      setCurrentModuleIndex(0);
+      // After completing all learning modules, go to discussion
+      router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
     }
   };
 
@@ -553,11 +542,7 @@ function TopicSessionContent() {
                 onClick={handleContinueAfterQuiz}
                 className="w-full px-8 py-4 rounded-lg font-semibold transition-all bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-lg text-lg"
               >
-                {currentView === 'diagnostic' 
-                  ? (topicData?.learning_session?.active_modules?.length > 0 
-                      ? 'Continue to Learning Modules' 
-                      : 'Continue to Discussion')
-                  : 'Back to Roadmap'}
+                Continue to Discussion 🗣️
               </button>
             </div>
           </div>

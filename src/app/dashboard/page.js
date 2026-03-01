@@ -174,14 +174,15 @@ export default function DashboardPage() {
   const getTopicIcon = (state, completionStatus) => {
     if (completionStatus === 'completed') return "✅";
     if (state === 'learning_session') return "🔄";
+    if (state === 'discussion') return "💬";
     if (state === 'diagnostic') return "📝";
-    if (state === 'final_quiz') return "🎯";
+    if (state === 'final_quiz' || state === 'final') return "🎯";
     return "🔒";
   };
 
   const getTopicStatus = (state, completionStatus) => {
     if (completionStatus === 'completed') return 'completed';
-    if (state === 'learning_session' || state === 'diagnostic' || state === 'final' || state === 'final_quiz') return 'in-progress';
+    if (state === 'learning_session' || state === 'diagnostic' || state === 'discussion' || state === 'final' || state === 'final_quiz') return 'in-progress';
     return 'in-progress'; // No topics should be locked by default
   };
 

@@ -53,7 +53,7 @@ COMMENT ON COLUMN public.course_packs.course_packs IS
   "topic_session": {
     "topic_id": "topic_001",
     "title": "Topic Title",
-    "state": "diagnostic|learning_session|final_quiz|completed",
+    "state": "diagnostic|discussion|learning_session|final_quiz|completed",
     "subskills": [...],
     "diagnostic": {...},
     "learning_session": {...},

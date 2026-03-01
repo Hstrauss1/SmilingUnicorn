@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.topic_sessions (
   course_pack_id UUID REFERENCES public.course_packs(id) ON DELETE CASCADE NOT NULL,
   topic_id TEXT NOT NULL,
   title TEXT NOT NULL,
-  state TEXT DEFAULT 'diagnostic' CHECK (state IN ('diagnostic', 'learning_session', 'final_quiz', 'completed')),
+  state TEXT DEFAULT 'diagnostic' CHECK (state IN ('diagnostic', 'discussion', 'learning_session', 'final_quiz', 'completed')),
   completion_status TEXT DEFAULT 'not_started' CHECK (completion_status IN ('not_started', 'in_progress', 'completed')),
   order_index INTEGER DEFAULT 0,
   completed_at TIMESTAMP WITH TIME ZONE,

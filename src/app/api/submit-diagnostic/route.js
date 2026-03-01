@@ -219,13 +219,8 @@ function gradeDiagnosticAndUpdateMastery(coursePack, submittedAnswers) {
   });
 
   // Update state based on results
-  if (weakSubskillsSet.size === 0) {
-    // Perfect score, go straight to final quiz
-    result.topic_session.state = 'final';
-  } else {
-    // Has weak subskills, need learning session
-    result.topic_session.state = 'learning_session';
-  }
+  // Always go to discussion after diagnostic
+  result.topic_session.state = 'discussion';
 
   return result;
 }

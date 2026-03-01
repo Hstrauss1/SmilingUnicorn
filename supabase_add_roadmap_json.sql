@@ -32,7 +32,7 @@ COMMENT ON COLUMN public.course_packs.roadmap_json IS
   "topic_session": {
     "topic_id": "topic_001",
     "title": "Course Title",
-    "state": "diagnostic|learning|final|completed",
+    "state": "diagnostic|discussion|learning_session|final_quiz|completed",
     "subskills": [{
       "subskill_id": "string",
       "name": "string",
