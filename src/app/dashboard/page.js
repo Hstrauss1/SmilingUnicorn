@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getUserCoursePacks, getUserStats, getRecentActivity } from "@/lib/supabase/coursePacks";
+import { getUserCoursePacks, getUserStats } from "@/lib/supabase/coursePacks";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -14,13 +14,11 @@ import generatedTopicSession from "@/testPy/out/topic_session_after_learning.jso
 export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
-  const [activeTab, setActiveTab] = useState("all");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [coursePacks, setCoursePacks] = useState([]);
   const [selectedPack, setSelectedPack] = useState(null);
   const [stats, setStats] = useState(null);
-  const [recentActivity, setRecentActivity] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -195,7 +193,6 @@ export default function DashboardPage() {
     setCoursePacks(mockCoursePacks);
     setSelectedPack(mockCoursePacks[0]);
     setStats(mockStats);
-    setRecentActivity(mockActivity);
   };
 
   useEffect(() => {
@@ -209,7 +206,6 @@ export default function DashboardPage() {
           const [packs, userStats, activity] = await Promise.all([
             getUserCoursePacks(),
             getUserStats(),
-            getRecentActivity(5)
           ]);
           
           // If no data exists yet, use mock data
@@ -218,7 +214,6 @@ export default function DashboardPage() {
           } else {
             setCoursePacks(packs);
             setStats(userStats);
-            setRecentActivity(activity);
             setSelectedPack(packs[0]);
           }
         } catch (error) {
@@ -324,50 +319,7 @@ export default function DashboardPage() {
               Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0]}! Continue your learning journey.
             </p>
           </div>
-
-          {/* Stats Grid */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-3xl">📊</span>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {currentStats.averageProgress}%
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Overall Progress</p>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-3xl">📚</span>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {currentStats.totalCoursePacks}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Active Roadmaps</p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-3xl">✅</span>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {currentStats.completedTopics}/{currentStats.totalTopics}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Topics Completed</p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-3xl">🔥</span>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {currentStats.currentStreak}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Day Streak</p>
-            </div>
-          </div>
-
+          
           {/* Course Pack Selector (if multiple packs) */}
           {coursePacks.length > 1 && (
             <div className="mb-6 relative w-full md:w-96" ref={dropdownRef}>
@@ -566,34 +518,6 @@ export default function DashboardPage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Recent Activity */}
-              <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl p-6 border border-[#e8e3d3] dark:border-[#4a4a4a] shadow-sm">
-                <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
-                  Recent Activity
-                </h3>
-                <div className="space-y-4">
-                  {recentActivity && recentActivity.length > 0 ? (
-                    recentActivity.map((activity, index) => (
-                      <div key={index} className="flex gap-3">
-                        <div className="w-2 h-2 bg-[#c09080] rounded-full mt-2 shrink-0" />
-                        <div className="flex-1">
-                          <p className="text-sm text-[#2d2d2d] dark:text-[#e8e3d3]">
-                            <span className="font-semibold">{activity.action}</span> {activity.item}
-                          </p>
-                          <p className="text-xs text-[#5a5a5a] dark:text-[#b8b3a3] mt-1">
-                            {getTimeAgo(activity.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] text-center py-4">
-                      No recent activity
-                    </p>
-                  )}
-                </div>
-              </div>
-
               {/* Quick Actions */}
               <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl p-6 border border-[#e8e3d3] dark:border-[#4a4a4a] shadow-sm">
                 <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
@@ -624,7 +548,7 @@ export default function DashboardPage() {
                   💡 Learning Tip
                 </h3>
                 <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3]">
-                  Accessible education means learning at your own pace. Take diagnostic quizzes to identify gaps, then focus on targeted learning modules. Everyone&apos;s journey is unique!
+                  Accessible tutoring means learning at your own pace. Take diagnostic quizzes to identify gaps, then focus on targeted learning modules. Everyone&apos;s journey is unique!
                 </p>
               </div>
             </div>

@@ -15,7 +15,7 @@ export default function Hero() {
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-[#2d2d2d] dark:text-[#e8e3d3] mb-6">
             <span className="bg-gradient-to-r from-[#c09080] to-[#d4c4dc] bg-clip-text text-transparent">
-              Accessible Education
+              Accessible Tutoring
             </span>
             <span>
               {" "}for Everyone, Everywhere
@@ -40,25 +40,7 @@ export default function Hero() {
               See How It Works
             </Link>
           </div>
-          
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[#c09080] dark:text-[#c09080]">100%</div>
-              <div className="mt-2 text-[#5a5a5a] dark:text-[#888378]">Free Forever</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[#d4c4dc] dark:text-[#d4c4dc]">10K+</div>
-              <div className="mt-2 text-[#5a5a5a] dark:text-[#888378]">Students Worldwide</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[#c09080] dark:text-[#c09080]">50+</div>
-              <div className="mt-2 text-[#5a5a5a] dark:text-[#888378]">Languages Supported</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[#d4c4dc] dark:text-[#d4c4dc]">24/7</div>
-              <div className="mt-2 text-[#5a5a5a] dark:text-[#888378]">Free Access</div>
-            </div>
-          </div>
+        
         </div>
       </div>
     </section>
