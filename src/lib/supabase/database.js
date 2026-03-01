@@ -115,7 +115,7 @@ export async function updateRoadmapProgress(roadmapId, progress) {
   
   const { data, error } = await supabase
     .from('learning_roadmaps')
-    .update({ progress, updated_at: new Date().toISOString() })
+    .update({ progress })
     .eq('id', roadmapId)
     .select()
     .single();
@@ -132,7 +132,7 @@ export async function updateRoadmapStatus(roadmapId, status) {
   
   const { data, error } = await supabase
     .from('learning_roadmaps')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({ status })
     .eq('id', roadmapId)
     .select()
     .single();
@@ -192,7 +192,6 @@ export async function updateModuleProgress(moduleId, progress, status) {
     .update({ 
       progress, 
       status,
-      updated_at: new Date().toISOString() 
     })
     .eq('id', moduleId)
     .select()

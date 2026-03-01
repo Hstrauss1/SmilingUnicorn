@@ -21,4 +21,3 @@ ORDER BY
 -- user_id       | uuid      | NO          | NULL
 -- course_packs  | jsonb     | NO          | '[]'::jsonb
 -- created_at    | timestamp | NO          | timezone('utc'...)
--- updated_at    | timestamp | NO          | timezone('utc'...)
