@@ -83,24 +83,83 @@ export default function UploadPage() {
 
     const errors = [];
 
-    for (const file of files) {
-      // Sanitize the course name to be a safe folder name
-      const folderName = selectedCourse.replace(/[^a-zA-Z0-9 _\-]/g, "").trim();
-      const filePath = `${folderName}/${file.name}`;
-
-      setUploadProgress((prev) => ({ ...prev, [file.name]: "uploading" }));
-
-      const { error } = await supabase.storage
-        .from("Courses")
-        .upload(filePath, file, { upsert: true });
-
-      if (error) {
-        console.error(`Error uploading ${file.name}:`, error.message);
-        errors.push(`${file.name}: ${error.message}`);
-        setUploadProgress((prev) => ({ ...prev, [file.name]: "error" }));
-      } else {
-        setUploadProgress((prev) => ({ ...prev, [file.name]: "done" }));
+    try {
+      // Step 1: Process PDFs into JSON using Python script
+      for (const file of files) {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: "processing" }));
       }
+
+      const formData = new FormData();
+      files.forEach(file => formData.append('files', file));
+      formData.append('courseName', selectedCourse);
+
+      const response = await fetch('/api/process-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process PDFs');
+      }
+
+      const result = await response.json();
+      console.log('Processing result:', result);
+
+      // Step 2: Upload generated JSON files to Supabase
+      const folderName = selectedCourse.replace(/[^a-zA-Z0-9 _\-]/g, "").trim();
+
+      // Upload chunks JSONL file
+      if (result.chunks && result.chunks.length > 0) {
+        setUploadProgress((prev) => ({ ...prev, [result.chunksFile]: "uploading" }));
+        
+        const chunksJsonl = result.chunks.map(chunk => JSON.stringify(chunk)).join('\n');
+        const chunksBlob = new Blob([chunksJsonl], { type: 'application/x-ndjson' });
+        
+        const { error: chunksError } = await supabase.storage
+          .from("Courses")
+          .upload(`${folderName}/${result.chunksFile}`, chunksBlob, { upsert: true });
+
+        if (chunksError) {
+          console.error(`Error uploading chunks:`, chunksError.message);
+          errors.push(`Chunks file: ${chunksError.message}`);
+          setUploadProgress((prev) => ({ ...prev, [result.chunksFile]: "error" }));
+        } else {
+          setUploadProgress((prev) => ({ ...prev, [result.chunksFile]: "done" }));
+        }
+      }
+
+      // Upload topic session JSON file
+      if (result.session) {
+        setUploadProgress((prev) => ({ ...prev, [result.sessionFile]: "uploading" }));
+        
+        const sessionJson = JSON.stringify(result.session, null, 2);
+        const sessionBlob = new Blob([sessionJson], { type: 'application/json' });
+        
+        const { error: sessionError } = await supabase.storage
+          .from("Courses")
+          .upload(`${folderName}/${result.sessionFile}`, sessionBlob, { upsert: true });
+
+        if (sessionError) {
+          console.error(`Error uploading session:`, sessionError.message);
+          errors.push(`Session file: ${sessionError.message}`);
+          setUploadProgress((prev) => ({ ...prev, [result.sessionFile]: "error" }));
+        } else {
+          setUploadProgress((prev) => ({ ...prev, [result.sessionFile]: "done" }));
+        }
+      }
+
+      // Mark original PDFs as processed
+      files.forEach(file => {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: "done" }));
+      });
+
+    } catch (error) {
+      console.error('Error processing and uploading files:', error);
+      errors.push(error.message);
+      files.forEach(file => {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: "error" }));
+      });
     }
 
     setUploading(false);
@@ -180,8 +239,9 @@ export default function UploadPage() {
                           </p>
                           <p className="text-xs text-[#5a5a5a] dark:text-[#b8b3a3]">
                             {(file.size / 1024 / 1024).toFixed(2)} MB
+                            {uploadProgress[file.name] === "processing" && <span className="ml-2 text-[#c09080]">Processing PDF…</span>}
                             {uploadProgress[file.name] === "uploading" && <span className="ml-2 text-[#c09080]">Uploading…</span>}
-                            {uploadProgress[file.name] === "done" && <span className="ml-2 text-green-600">✓ Uploaded</span>}
+                            {uploadProgress[file.name] === "done" && <span className="ml-2 text-green-600">✓ Complete</span>}
                             {uploadProgress[file.name] === "error" && <span className="ml-2 text-red-600">✗ Failed</span>}
                           </p>
                         </div>

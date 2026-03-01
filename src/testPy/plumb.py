@@ -1,7 +1,7 @@
 import os, json, re
 import pdfplumber
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 
 def clean_text(s: str) -> str:
     if not s:
@@ -33,7 +33,7 @@ def extract_pdf_chunks(pdf_path: str, course_pack_id: str, source_type: str):
     return chunks
 
 def build_topic_session_skeleton(course_pack_id: str, title: str):
-    now = datetime.utcnow().isoformat() + "Z"
+    now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
     return {
         "course_pack_id": course_pack_id,
         "topic_session": {
@@ -70,7 +70,7 @@ def build_topic_session_skeleton(course_pack_id: str, title: str):
         }
     }
 
-def main(pdf_dir: str, title: str):
+def main(pdf_dir: str, title: str, output_dir: str = None):
     course_pack_id = f"course_{uuid4().hex[:8]}"
     all_chunks = []
 
@@ -83,9 +83,13 @@ def main(pdf_dir: str, title: str):
         source_type = "labs" if ("lab" in lower or "assignment" in lower) else "slides"
         all_chunks.extend(extract_pdf_chunks(path, course_pack_id, source_type))
 
+    # Use provided output_dir or default to "out" in current directory
+    if output_dir is None:
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
+    
     # Write chunks jsonl
-    os.makedirs("out", exist_ok=True)
-    chunks_path = os.path.join("out", f"{course_pack_id}_chunks.jsonl")
+    os.makedirs(output_dir, exist_ok=True)
+    chunks_path = os.path.join(output_dir, f"{course_pack_id}_chunks.jsonl")
     with open(chunks_path, "w", encoding="utf-8") as f:
         for c in all_chunks:
             f.write(json.dumps(c) + "\n")
@@ -102,7 +106,7 @@ def main(pdf_dir: str, title: str):
         "evidence_chunk_ids": [c["chunk_id"] for c in all_chunks[:20]]  # cap for size
     }]
 
-    session_path = os.path.join("out", f"{course_pack_id}_topic_session.json")
+    session_path = os.path.join(output_dir, f"{course_pack_id}_topic_session.json")
     with open(session_path, "w", encoding="utf-8") as f:
         json.dump(session, f, indent=2)
 
@@ -115,6 +119,7 @@ if __name__ == "__main__":
     # main("./my_course_pdfs", "Embedded Systems Midterm: Stack + Calling Convention")
     import sys
     if len(sys.argv) < 3:
-        print("Usage: python parse_course.py <pdf_dir> <title>")
+        print("Usage: python parse_course.py <pdf_dir> <title> [output_dir]")
         raise SystemExit(1)
-    main(sys.argv[1], sys.argv[2])
+    output_dir = sys.argv[3] if len(sys.argv) > 3 else None
+    main(sys.argv[1], sys.argv[2], output_dir)
