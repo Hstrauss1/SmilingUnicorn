@@ -5,61 +5,35 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
+// Languages with native names and descriptions
 const SUPPORTED_LANGUAGES = [
-  { code: "en", name: "English" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "de", name: "German" },
-  { code: "it", name: "Italian" },
-  { code: "pt", name: "Portuguese" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" },
-  { code: "zh", name: "Chinese" },
-  { code: "hi", name: "Hindi" },
+  { code: "en", name: "English", description: "Speak with the AI in English" },
+  { code: "es", name: "Español", description: "Habla con la IA en español" },
+  { code: "fr", name: "Français", description: "Parlez avec l'IA en français" },
+  { code: "de", name: "Deutsch", description: "Sprechen Sie mit der KI auf Deutsch" },
+  { code: "it", name: "Italiano", description: "Parla con l'IA in italiano" },
+  { code: "pt", name: "Português", description: "Fale com a IA em português" },
+  { code: "ja", name: "日本語", description: "AIと日本語で話す" },
+  { code: "ko", name: "한국어", description: "AI와 한국어로 대화하세요" },
+  { code: "zh", name: "中文", description: "用中文与AI对话" },
+  { code: "hi", name: "हिन्दी", description: "AI से हिंदी में बात करें" },
 ];
 
-// Sample questions - in production, these would come from the backend/database
-const SAMPLE_QUESTIONS = [
-  {
-    id: 1,
-    question: "What is the capital of France?",
-    correctAnswer: "Paris",
-    hints: ["It's known as the City of Light", "The Eiffel Tower is located here"],
-  },
-  {
-    id: 2,
-    question: "What is 2 + 2?",
-    correctAnswer: "4",
-    hints: ["It's an even number", "It's less than 5"],
-  },
-  {
-    id: 3,
-    question: "What planet is known as the Red Planet?",
-    correctAnswer: "Mars",
-    hints: ["It's the fourth planet from the Sun", "It's named after the Roman god of war"],
-  },
-  {
-    id: 4,
-    question: "What is the largest ocean on Earth?",
-    correctAnswer: "Pacific Ocean",
-    hints: ["It covers more area than all the land masses combined", "It borders the Americas on one side"],
-  },
-  {
-    id: 5,
-    question: "Who wrote Romeo and Juliet?",
-    correctAnswer: "William Shakespeare",
-    hints: ["He was an English playwright from the 16th century", "He's often called the Bard of Avon"],
-  },
-];
+const TOTAL_DURATION = 3 * 60; // 3 minutes in seconds
 
 function DiscussionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
   // Get topic context from URL params
-  const topicId = searchParams.get('topicId');
   const packId = searchParams.get('packId');
   const topicTitle = searchParams.get('topicTitle') || 'Practice Session';
+  
+  // Timer state
+  const [timeRemaining, setTimeRemaining] = useState(TOTAL_DURATION);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [isQuitting, setIsQuitting] = useState(false);
+  const [quitCountdown, setQuitCountdown] = useState(3);
   
   // Voice agent state
   const [selectedLanguage, setSelectedLanguage] = useState("en");
@@ -68,18 +42,19 @@ function DiscussionContent() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState(null);
   const conversationRef = useRef(null);
-  
-  // Discussion state
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [responses, setResponses] = useState([]);
-  const [sessionStarted, setSessionStarted] = useState(false);
-  const [sessionComplete, setSessionComplete] = useState(false);
-  const [questions, setQuestions] = useState(SAMPLE_QUESTIONS);
-  const [transcript, setTranscript] = useState([]);
-  const [feedbackGiven, setFeedbackGiven] = useState()
-  // Get current question
-  const currentQuestion = questions[currentQuestionIndex];
-  const totalQuestions = questions.length;
+  const timerRef = useRef(null);
+
+  // Format time as MM:SS
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Get progress percentage for timer
+  const getTimerProgress = () => {
+    return ((TOTAL_DURATION - timeRemaining) / TOTAL_DURATION) * 100;
+  };
 
   // Cleanup on unmount
   useEffect(() => {
@@ -87,73 +62,105 @@ function DiscussionContent() {
       if (conversationRef.current) {
         conversationRef.current.endSession();
       }
-      if (feedbackTimerRef.current) {
-        clearTimeout(feedbackTimerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
     };
   }, []);
 
-  // Auto-advance when feedback is given
+  // Timer countdown effect
   useEffect(() => {
-    if (feedbackGiven && isActive) {
-      feedbackTimerRef.current = setTimeout(() => {
-        handleNextQuestion();
-      }, 2000); // Wait 2 seconds after feedback before advancing
+    if (sessionStarted && timeRemaining > 0 && !isQuitting) {
+      timerRef.current = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            // Timer ended - stop session and redirect
+            clearInterval(timerRef.current);
+            handleSessionEnd();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
+    
     return () => {
-      if (feedbackTimerRef.current) {
-        clearTimeout(feedbackTimerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
     };
-  }, [feedbackGiven, isActive]);
+  }, [sessionStarted, isQuitting]);
 
-  // Auto-redirect after session complete
+  // Quit countdown effect
   useEffect(() => {
-    if (sessionComplete) {
-      const redirectTimer = setTimeout(() => {
-        if (packId) {
-          router.push(`/roadmap?packId=${packId}`);
-        } else {
-          router.push('/dashboard');
-        }
-      }, 5000);
-      return () => clearTimeout(redirectTimer);
+    if (isQuitting && quitCountdown > 0) {
+      const countdownTimer = setTimeout(() => {
+        setQuitCountdown((prev) => prev - 1);
+      }, 1000);
+      return () => clearTimeout(countdownTimer);
+    } else if (isQuitting && quitCountdown === 0) {
+      redirectToRoadmap();
     }
-  }, [sessionComplete, packId, router]);
+  }, [isQuitting, quitCountdown]);
 
-  // Track if agent has given feedback for current question
-  const feedbackTimerRef = useRef(null);
+  const redirectToRoadmap = () => {
+    if (packId) {
+      router.push(`/roadmap?packId=${packId}`);
+    } else {
+      router.push('/dashboard');
+    }
+  };
 
-  // Build the agent prompt with current question context
+  const handleSessionEnd = async () => {
+    if (conversationRef.current) {
+      await conversationRef.current.endSession();
+      conversationRef.current = null;
+    }
+    setIsActive(false);
+    setIsSpeaking(false);
+    // Auto redirect after session ends
+    setTimeout(() => {
+      redirectToRoadmap();
+    }, 2000);
+  };
+
+  const handleQuit = async () => {
+    // Stop the agent first
+    if (conversationRef.current) {
+      await conversationRef.current.endSession();
+      conversationRef.current = null;
+    }
+    setIsActive(false);
+    setIsSpeaking(false);
+    setIsQuitting(true);
+  };
+
+  // Build the agent prompt
   const buildAgentPrompt = useCallback(() => {
     const languageName = SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English";
     
-    return `You are a friendly educational discussion facilitator conducting an interactive voice Q&A session.
+    return `You are a friendly educational discussion facilitator having a free-form voice conversation with a student about "${topicTitle}".
 
 IMPORTANT: You MUST speak in ${languageName} at all times.
 
-You have just asked the user this question: "${currentQuestion?.question}"
-The correct answer is: "${currentQuestion?.correctAnswer}"
-This is question ${currentQuestionIndex + 1} of ${totalQuestions}.
-
-Your task:
-1. Wait for the user to give their verbal answer. Do not say anything until they respond.
-2. After the user responds, evaluate their answer:
-   - If their answer matches or is close to "${currentQuestion?.correctAnswer}": Say "That's correct!" and briefly explain why (1-2 sentences).
-   - If their answer is wrong: Say "Not quite." Then say "The correct answer is ${currentQuestion?.correctAnswer}" with a brief explanation.
-3. After giving feedback, you MUST end with exactly: "QUESTION COMPLETE"
+Your role:
+- Engage the student in a natural discussion about the topic
+- Ask thoughtful questions to assess their understanding
+- Provide helpful explanations and guidance
+- Be encouraging and supportive
+- Keep the conversation flowing naturally
 
 Rules:
-- Be encouraging and supportive.
-- Keep all responses concise (2-3 sentences max).
-- You MUST always end your feedback by saying "QUESTION COMPLETE" exactly - this triggers the next question.
-- Speak in ${languageName} throughout, but always say "QUESTION COMPLETE" in English at the very end.`;
-  }, [currentQuestionIndex, currentQuestion, selectedLanguage, totalQuestions]);
+- Speak clearly and at a moderate pace
+- Keep responses conversational (2-4 sentences typically)
+- Adapt to the student's level of understanding
+- If they seem confused, simplify your explanations
+- Encourage them to ask questions too`;
+  }, [selectedLanguage, topicTitle]);
 
   const startDiscussion = useCallback(async () => {
     setError(null);
     setIsConnecting(true);
-    setSessionStarted(true);
 
     try {
       const { Conversation } = await import("@elevenlabs/client");
@@ -162,12 +169,11 @@ Rules:
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
       const languageName = SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English";
-
-      // Build the system prompt for this specific question
       const systemPrompt = buildAgentPrompt();
       
-      // Build the first message - have the agent immediately ask the question
-      const firstMessage = `Question ${currentQuestionIndex + 1}: ${currentQuestion?.question}`;
+      const firstMessage = selectedLanguage === "en" 
+        ? `Hello! Let's discuss ${topicTitle}. Feel free to ask me anything or share what you already know about this topic.`
+        : `Hello! Let's discuss ${topicTitle} in ${languageName}. Feel free to speak whenever you're ready.`;
 
       const sessionConfig = {
         agentId: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID,
@@ -184,12 +190,7 @@ Rules:
           console.log("Discussion agent connected");
           setIsActive(true);
           setIsConnecting(false);
-          
-          // Add welcome message to transcript
-          setTranscript(prev => [...prev, {
-            type: 'system',
-            message: `Discussion started in ${languageName}. Question ${currentQuestionIndex + 1} of ${totalQuestions}.`
-          }]);
+          setSessionStarted(true);
         },
         onDisconnect: () => {
           console.log("Discussion agent disconnected");
@@ -210,18 +211,6 @@ Rules:
         onModeChange: (mode) => {
           setIsSpeaking(mode.mode === "speaking");
         },
-        onMessage: (message) => {
-          // Track conversation messages
-          if (message.source === 'user') {
-            setTranscript(prev => [...prev, { type: 'user', message: message.message }]);
-          } else if (message.source === 'ai') {
-            setTranscript(prev => [...prev, { type: 'agent', message: message.message }]);
-            // Check if agent has completed giving feedback
-            if (message.message && message.message.toUpperCase().includes('QUESTION COMPLETE')) {
-              setFeedbackGiven(true);
-            }
-          }
-        },
       };
 
       const conversation = await Conversation.startSession(sessionConfig);
@@ -231,68 +220,7 @@ Rules:
       setError(err.message || "Failed to start discussion. Please check microphone permissions.");
       setIsConnecting(false);
     }
-  }, [selectedLanguage, currentQuestion, currentQuestionIndex, totalQuestions, buildAgentPrompt]);
-
-  const stopDiscussion = useCallback(async () => {
-    if (conversationRef.current) {
-      await conversationRef.current.endSession();
-      conversationRef.current = null;
-    }
-    setIsActive(false);
-    setIsSpeaking(false);
-  }, []);
-
-  const handleNextQuestion = useCallback(async () => {
-    // Reset feedback state
-    setFeedbackGiven(false);
-    
-    // Record response for current question
-    setResponses(prev => [...prev, {
-      questionIndex: currentQuestionIndex,
-      question: currentQuestion?.question,
-      timestamp: new Date().toISOString(),
-    }]);
-
-    if (currentQuestionIndex < totalQuestions - 1) {
-      // Move to next question
-      setCurrentQuestionIndex(prev => prev + 1);
-      
-      // Restart the conversation with new question context
-      if (isActive) {
-        await stopDiscussion();
-        // Small delay before restarting
-        setTimeout(() => {
-          startDiscussion();
-        }, 1000);
-      }
-    } else {
-      // All questions completed
-      setSessionComplete(true);
-      await stopDiscussion();
-    }
-  }, [currentQuestionIndex, currentQuestion, totalQuestions, isActive, stopDiscussion, startDiscussion]);
-
-  const handleToggle = () => {
-    if (isActive) {
-      stopDiscussion();
-    } else {
-      startDiscussion();
-    }
-  };
-
-  const handleRestart = () => {
-    setCurrentQuestionIndex(0);
-    setResponses([]);
-    setSessionStarted(false);
-    setSessionComplete(false);
-    setTranscript([]);
-    setError(null);
-    setFeedbackGiven(false);
-  };
-
-  const getProgressPercentage = () => {
-    return ((currentQuestionIndex + 1) / totalQuestions) * 100;
-  };
+  }, [selectedLanguage, topicTitle, buildAgentPrompt]);
 
   // Handle navigation back to roadmap
   const handleBackToRoadmap = () => {
@@ -303,314 +231,239 @@ Rules:
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      <Header />
-      
-      <main className="flex-1 container mx-auto px-4 py-8 pt-24 max-w-4xl">
-        {/* Back Button */}
-        {packId && (
-          <button 
-            onClick={handleBackToRoadmap}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 flex items-center gap-1"
-          >
-            <span>&larr;</span> Back to Roadmap
-          </button>
-        )}
+  // Get the current language info
+  const currentLang = SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage);
 
-        {/* Page Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            🎙️ Voice Discussion
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {topicTitle !== 'Practice Session' ? (
-              <>Practicing: <span className="font-medium">{topicTitle}</span></>
-            ) : (
-              'Practice your knowledge with our AI voice assistant'
-            )}
-          </p>
-        </div>
-
-        {/* Concept Mastered Screen */}
-        {sessionComplete ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
-            <div className="text-8xl mb-6 animate-bounce">🏆</div>
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600 mb-4">
-              Concept Mastered!
+  // Session ended screen
+  if (timeRemaining === 0 && sessionStarted) {
+    return (
+      <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
+        <Header />
+        <main className="grow flex items-center justify-center px-4">
+          <div className="bg-white dark:bg-[#2d2d2d] rounded-2xl shadow-xl p-8 text-center max-w-md w-full border border-[#e8e3d3] dark:border-[#4a4a4a]">
+            <div className="text-6xl mb-6">✨</div>
+            <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
+              Session Complete!
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
-              Excellent work! You've completed all {totalQuestions} questions.
+            <p className="text-[#5a5a5a] dark:text-[#b8b3a3] mb-6">
+              Great discussion! You've completed your 3-minute practice session.
             </p>
-            
-            {/* Success Badge */}
-            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 px-6 py-3 rounded-full mb-8">
-              <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span className="text-green-700 dark:text-green-400 font-semibold">
-                {topicTitle !== 'Practice Session' ? topicTitle : 'Topic'} Complete
-              </span>
-            </div>
-
-            {/* Auto-redirect notice */}
-            <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 mb-6">
-              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-              <span>Redirecting to roadmap in 5 seconds...</span>
-            </div>
-
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={handleRestart}
-                className="px-8 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
-              >
-                Practice Again
-              </button>
-              <button
-                onClick={handleBackToRoadmap}
-                className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105"
-              >
-                Continue to Roadmap
-              </button>
+            <div className="flex items-center justify-center gap-2 text-[#5a5a5a] dark:text-[#b8b3a3]">
+              <div className="w-5 h-5 border-2 border-[#c09080] border-t-transparent rounded-full animate-spin" />
+              <span>Redirecting to roadmap...</span>
             </div>
           </div>
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Main Discussion Panel */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Progress Bar */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Question {currentQuestionIndex + 1} of {totalQuestions}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {Math.round(getProgressPercentage())}% Complete
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${getProgressPercentage()}%` }}
-                  />
-                </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Quitting screen
+  if (isQuitting) {
+    return (
+      <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
+        <Header />
+        <main className="grow flex items-center justify-center px-4">
+          <div className="bg-white dark:bg-[#2d2d2d] rounded-2xl shadow-xl p-8 text-center max-w-md w-full border border-[#e8e3d3] dark:border-[#4a4a4a]">
+            <div className="text-6xl mb-6">👋</div>
+            <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
+              Leaving Session
+            </h2>
+            <p className="text-[#5a5a5a] dark:text-[#b8b3a3] mb-6">
+              You're being redirected to the roadmap...
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#c09080]/20 flex items-center justify-center">
+                <span className="text-2xl font-bold text-[#c09080]">{quitCountdown}</span>
               </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
-              {/* Voice Session Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-                {/* Instruction when not started */}
-                {!isActive && !feedbackGiven && (
-                  <div className="mb-6 text-center py-8">
-                    <div className="text-5xl mb-4">🎧</div>
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                      Voice Q&A Session
-                    </h2>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {sessionStarted 
-                        ? "Click below to resume. The agent will continue asking questions."
-                        : "Start the session and the AI agent will ask you questions verbally. Listen and respond out loud!"}
-                    </p>
-                  </div>
-                )}
+  return (
+    <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
+      <Header />
+      
+      <main className="grow pt-24 pb-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          {packId && !sessionStarted && (
+            <button 
+              onClick={handleBackToRoadmap}
+              className="text-sm text-[#c09080] dark:text-[#d4c4dc] hover:underline mb-4 flex items-center gap-1"
+            >
+              <span>&larr;</span> Back to Roadmap
+            </button>
+          )}
 
-                {/* Voice Status Indicator */}
-                {isActive && (
-                  <div className="mb-6 flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 rounded-xl border border-blue-200 dark:border-gray-600">
-                    <div className="flex gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-1.5 rounded-full transition-all duration-300 ${
-                            isSpeaking
-                              ? "bg-purple-500 animate-pulse"
-                              : "bg-blue-500"
-                          }`}
-                          style={{
-                            animationDelay: `${i * 100}ms`,
-                            height: isSpeaking ? `${16 + Math.random() * 16}px` : "20px",
-                          }}
-                        />
+          {/* Page Header */}
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-extrabold text-[#2d2d2d] dark:text-[#e8e3d3] tracking-tight mb-2">
+              Voice Discussion
+            </h1>
+            <p className="text-[#5a5a5a] dark:text-[#b8b3a3]">
+              {topicTitle !== 'Practice Session' ? (
+                <>Discussing: <span className="font-medium text-[#c09080] dark:text-[#d4c4dc]">{topicTitle}</span></>
+              ) : (
+                'Practice with our AI voice assistant'
+              )}
+            </p>
+          </div>
+
+          {/* Main Card */}
+          <div className="bg-white dark:bg-[#2d2d2d] rounded-2xl shadow-xl border border-[#e8e3d3] dark:border-[#4a4a4a] overflow-hidden">
+            
+            {/* Timer Section */}
+            <div className="p-6 border-b border-[#e8e3d3] dark:border-[#4a4a4a]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-[#5a5a5a] dark:text-[#b8b3a3]">
+                  {sessionStarted ? 'Time Remaining' : 'Session Duration'}
+                </span>
+                <span className="text-2xl font-bold text-[#c09080] dark:text-[#d4c4dc] font-mono">
+                  {formatTime(timeRemaining)}
+                </span>
+              </div>
+              <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-3">
+                <div 
+                  className="bg-linear-to-r from-[#c09080] to-[#d4c4dc] h-3 rounded-full transition-all duration-1000"
+                  style={{ width: `${getTimerProgress()}%` }}
+                />
+              </div>
+              <p className="text-xs text-[#8a8a8a] dark:text-[#888378] mt-2 text-center">
+                {sessionStarted 
+                  ? 'The agent will keep talking with you until the timer ends' 
+                  : '3-minute discussion session'}
+              </p>
+            </div>
+
+            {/* Voice Agent Section */}
+            <div className="p-6">
+              {!sessionStarted ? (
+                // Pre-session: Language selection and start
+                <div className="space-y-6">
+                  {/* Language Selector */}
+                  <div>
+                    <label className="block text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-3">
+                      🌍 {currentLang?.description}
+                    </label>
+                    <select
+                      value={selectedLanguage}
+                      onChange={(e) => setSelectedLanguage(e.target.value)}
+                      disabled={isConnecting}
+                      className="w-full px-4 py-3 rounded-xl border border-[#e8e3d3] dark:border-[#4a4a4a] bg-[#faf9f6] dark:bg-[#3a3a3a] text-[#2d2d2d] dark:text-[#e8e3d3] focus:ring-2 focus:ring-[#c09080] focus:border-[#c09080] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {SUPPORTED_LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </option>
                       ))}
+                    </select>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                      <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
                     </div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {isSpeaking ? "Agent is responding..." : "Listening to your answer..."}
-                    </span>
-                  </div>
-                )}
+                  )}
 
-                {/* Error Message */}
-                {error && (
-                  <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                    <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                  </div>
-                )}
-
-                {/* Auto-advancing indicator */}
-                {feedbackGiven && (
-                  <div className="mb-6 flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                    <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                      {currentQuestionIndex < totalQuestions - 1 
-                        ? "Moving to next question..." 
-                        : "Completing session..."}
-                    </span>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
+                  {/* Start Button */}
                   <button
-                    onClick={handleToggle}
-                    disabled={isConnecting || feedbackGiven}
-                    className={`flex-1 py-3 px-6 rounded-xl font-semibold text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
-                      isActive
-                        ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                        : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                    } shadow-lg`}
+                    onClick={startDiscussion}
+                    disabled={isConnecting}
+                    className="w-full py-4 px-6 rounded-xl font-semibold text-white bg-linear-to-r from-[#c09080] to-[#d4c4dc] hover:shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                   >
                     {isConnecting ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Connecting...
                       </>
-                    ) : isActive ? (
-                      <>
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <rect x="5" y="5" width="10" height="10" rx="1" />
-                        </svg>
-                        Stop Session
-                      </>
                     ) : (
                       <>
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
                         </svg>
-                        {sessionStarted ? "Resume Session" : "Start Session"}
+                        Start 3-Minute Discussion
                       </>
                     )}
                   </button>
 
-                  {sessionStarted && !isActive && !feedbackGiven && (
-                    <button
-                      onClick={handleNextQuestion}
-                      disabled={isConnecting}
-                      className="py-3 px-6 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center gap-2"
-                    >
-                      Skip Question
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Transcript */}
-              {transcript.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <span>📝</span> Conversation Transcript
-                  </h3>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {transcript.map((entry, index) => (
-                      <div
-                        key={index}
-                        className={`p-3 rounded-lg ${
-                          entry.type === 'user'
-                            ? 'bg-blue-50 dark:bg-blue-900/20 ml-8'
-                            : entry.type === 'agent'
-                            ? 'bg-purple-50 dark:bg-purple-900/20 mr-8'
-                            : 'bg-gray-50 dark:bg-gray-700 text-center text-sm'
-                        }`}
-                      >
-                        {entry.type !== 'system' && (
-                          <span className={`text-xs font-medium ${
-                            entry.type === 'user' 
-                              ? 'text-blue-600 dark:text-blue-400' 
-                              : 'text-purple-600 dark:text-purple-400'
-                          }`}>
-                            {entry.type === 'user' ? 'You' : 'Agent'}
-                          </span>
-                        )}
-                        <p className={`${entry.type === 'system' ? 'text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                          {entry.message}
-                        </p>
-                      </div>
-                    ))}
+                  {/* Instructions */}
+                  <div className="bg-[#f4f1e8] dark:bg-[#3a3a3a] rounded-xl p-4">
+                    <h4 className="font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">💡 How it works</h4>
+                    <ul className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] space-y-1">
+                      <li>• The AI will engage you in conversation for 3 minutes</li>
+                      <li>• Speak naturally - ask questions or share your thoughts</li>
+                      <li>• You can quit early at any time</li>
+                    </ul>
                   </div>
+                </div>
+              ) : (
+                // Active session
+                <div className="space-y-6">
+                  {/* Voice Status Indicator */}
+                  <div className="flex flex-col items-center py-8">
+                    <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-6 transition-all duration-300 ${
+                      isSpeaking 
+                        ? 'bg-[#d4c4dc]/30 ring-4 ring-[#d4c4dc] ring-offset-4' 
+                        : 'bg-[#c09080]/20 ring-4 ring-[#c09080]/50'
+                    }`}>
+                      <div className="flex gap-1.5">
+                        {[...Array(5)].map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-2 rounded-full transition-all duration-300 ${
+                              isSpeaking
+                                ? "bg-[#d4c4dc]"
+                                : "bg-[#c09080]"
+                            }`}
+                            style={{
+                              animation: isActive ? `pulse 0.5s ease-in-out infinite` : 'none',
+                              animationDelay: `${i * 100}ms`,
+                              height: isSpeaking 
+                                ? `${20 + Math.sin(Date.now() / 200 + i) * 15}px` 
+                                : "24px",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <p className="text-lg font-medium text-[#2d2d2d] dark:text-[#e8e3d3]">
+                      {isSpeaking ? "Agent is speaking..." : "Listening..."}
+                    </p>
+                    <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mt-1">
+                      Speaking in {currentLang?.name}
+                    </p>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                      <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                    </div>
+                  )}
+
+                  {/* Quit Button */}
+                  <button
+                    onClick={handleQuit}
+                    className="w-full py-3 px-6 rounded-xl font-semibold text-[#c09080] bg-[#c09080]/10 hover:bg-[#c09080]/20 border border-[#c09080]/30 transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Quit Discussion Early
+                  </button>
                 </div>
               )}
             </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Language Selector */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <span>🌍</span> Language
-                </h3>
-                <select
-                  id="language-select"
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  disabled={isActive || isConnecting}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {SUPPORTED_LANGUAGES.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Both you and the agent will speak in this language
-                </p>
-              </div>
-
-              {/* Progress Overview */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <span>📋</span> Progress
-                </h3>
-                <div className="flex justify-center gap-2 mb-4">
-                  {questions.map((q, index) => (
-                    <div
-                      key={q.id}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
-                        index === currentQuestionIndex
-                          ? 'bg-blue-500 text-white ring-2 ring-blue-300 ring-offset-2'
-                          : index < currentQuestionIndex
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
-                      }`}
-                    >
-                      {index < currentQuestionIndex ? '✓' : index + 1}
-                    </div>
-                  ))}
-                </div>
-                <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-                  {currentQuestionIndex < totalQuestions 
-                    ? `Question ${currentQuestionIndex + 1} of ${totalQuestions}` 
-                    : 'All questions completed!'}
-                </p>
-              </div>
-
-              {/* Tips */}
-              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <span>💡</span> Tips
-                </h3>
-                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                  <li>• Speak clearly and at a normal pace</li>
-                  <li>• Wait for the agent to finish before responding</li>
-                  <li>• The agent will give feedback and auto-advance</li>
-                  <li>• Complete all 5 questions to master the concept</li>
-                </ul>
-              </div>
-            </div>
           </div>
-        )}
+        </div>
       </main>
       
       <Footer />
@@ -621,8 +474,8 @@ Rules:
 export default function DiscussionPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#c09080]"></div>
       </div>
     }>
       <DiscussionContent />
