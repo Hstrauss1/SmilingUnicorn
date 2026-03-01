@@ -22,6 +22,8 @@ ERROR_TYPE_DEFAULT = "reasoning_error"
 # Keep evidence short to fit context window
 MAX_EVIDENCE_CHARS_PER_SUBSKILL = 2200
 MAX_EVIDENCE_SNIPPET_PER_CHUNK = 700
+MAX_CHUNKS_PER_SUBSKILL = 5
+MAX_CHARS_PER_CHUNK = 700
 
 
 # =========================
@@ -365,10 +367,10 @@ def build_final_quiz_llm(topic_session_obj: dict, chunk_map: Dict[str, str], que
             continue
 
         evidence = []
-        for cid in (s.get("evidence_chunk_ids") or [])[:MAX_EVIDENCE_SNIPPET_PER_CHUNK]:
+        for cid in (s.get("evidence_chunk_ids") or [])[:MAX_CHUNKS_PER_SUBSKILL]:
             txt = chunk_map.get(cid, "")
             if txt.strip():
-                evidence.append({"chunk_id": cid, "text": _snippet(txt, MAX_EVIDENCE_CHARS_PER_SUBSKILL)})
+                evidence.append({"chunk_id": cid, "text": _snippet(txt, MAX_CHARS_PER_CHUNK)})
 
         user = json.dumps(
             {"subskill": {"subskill_id": sid, "name": s.get("name", "")}, "evidence": evidence},
