@@ -1,7 +1,7 @@
 import os, json, re
 import pdfplumber
 from uuid import uuid4
-from datetime import datetime, timezone
+from datetime import datetime
 
 def clean_text(s: str) -> str:
     if not s:
@@ -33,7 +33,8 @@ def extract_pdf_chunks(pdf_path: str, course_pack_id: str, source_type: str):
     return chunks
 
 def build_topic_session_skeleton(course_pack_id: str, title: str):
-    now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+    # Use ISO format with Z suffix for UTC time (compatible with Python 3.8+)
+    now = datetime.utcnow().isoformat() + "Z"
     return {
         "course_pack_id": course_pack_id,
         "topic_session": {
@@ -110,9 +111,10 @@ def main(pdf_dir: str, title: str, output_dir: str = None):
     with open(session_path, "w", encoding="utf-8") as f:
         json.dump(session, f, indent=2)
 
-    print("Wrote:", chunks_path)
-    print("Wrote:", session_path)
-    print("Total chunks:", len(all_chunks))
+    print(f"SUCCESS: Generated {len(all_chunks)} chunks from {len([f for f in os.listdir(pdf_dir) if f.lower().endswith('.pdf')])} PDF files")
+    print(f"CHUNKS_FILE: {chunks_path}")
+    print(f"SESSION_FILE: {session_path}")
+    print(f"COURSE_PACK_ID: {course_pack_id}")
 
 if __name__ == "__main__":
     # Example usage:

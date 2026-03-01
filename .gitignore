@@ -39,6 +39,14 @@ yarn-error.log*
 # temp uploads
 /temp
 
+# Python virtual environment
+/venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -63,6 +63,74 @@ export async function getUserCoursePacks() {
 }
 
 /**
+ * Get all course packs for the current user with formatted data
+ * Reads from the course_packs JSONB array
+ */
+export async function getUserCoursePacksFormatted() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('course_packs')
+    .select('course_packs')
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No row exists yet for this user
+      return [];
+    }
+    throw error;
+  }
+  
+  if (!data || !data.course_packs) return [];
+
+  // The course_packs column is already a JSONB array of course packs
+  const coursePacksArray = data.course_packs;
+
+  // Transform each course pack into dashboard format
+  return coursePacksArray.map(pack => {
+    const topicSession = pack.topic_session;
+    
+    if (!topicSession) {
+      console.warn(`Course pack ${pack.course_pack_id} has no topic session`);
+      return null;
+    }
+
+    // Create topic session object
+    const topic = {
+      id: topicSession.topic_id,
+      title: topicSession.title,
+      state: topicSession.state,
+      completion_status: topicSession.completion?.status || "not_started",
+      subskills: (topicSession.subskills || []).map(skill => ({
+        id: skill.subskill_id,
+        name: skill.name,
+        mastery: skill.mastery || 0
+      })),
+      diagnostic: topicSession.diagnostic,
+      learning_session: topicSession.learning_session,
+      final_quiz: topicSession.final_quiz
+    };
+
+    // Return formatted course pack
+    return {
+      id: pack.course_pack_id,
+      title: pack.title,
+      document_name: pack.document_name,
+      progress: pack.progress || 0,
+      status: pack.status || 'in_progress',
+      topic_sessions: [topic],
+      created_at: pack.created_at,
+      updated_at: pack.updated_at
+    };
+  }).filter(pack => pack !== null); // Remove any invalid packs
+}
+
+/**
  * Get a specific course pack by ID with all topic sessions
  */
 export async function getCoursePackById(coursePackId) {
