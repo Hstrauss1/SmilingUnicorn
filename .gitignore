@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# temp uploads
+/temp
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -52,3 +55,7 @@ DASHBOARD_SUMMARY.md
 DATA_FLOW.md
 
 DATABASE_SCHEMA.md
+
+*.json
+
+*.jsonl
