@@ -76,7 +76,7 @@ function DiscussionContent() {
   const [sessionComplete, setSessionComplete] = useState(false);
   const [questions, setQuestions] = useState(SAMPLE_QUESTIONS);
   const [transcript, setTranscript] = useState([]);
-
+  const [feedbackGiven, setFeedbackGiven] = useState()
   // Get current question
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
@@ -122,34 +122,33 @@ function DiscussionContent() {
   }, [sessionComplete, packId, router]);
 
   // Track if agent has given feedback for current question
-  const [feedbackGiven, setFeedbackGiven] = useState(false);
   const feedbackTimerRef = useRef(null);
 
   // Build the agent prompt with current question context
   const buildAgentPrompt = useCallback(() => {
     const languageName = SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English";
     
-    return `You are a friendly educational discussion facilitator conducting an interactive Q&A session. 
-    
-IMPORTANT: You MUST speak in ${languageName} at all times.
+    return `You are a friendly educational discussion facilitator conducting an interactive voice Q&A session.
 
-Current Question (${currentQuestionIndex + 1} of ${totalQuestions}): "${currentQuestion?.question}"
+IMPORTANT: You MUST speak in ${languageName} at all times. The user cannot see the questions on screen, so you must ask them verbally.
+
+Question to ask: "${currentQuestion?.question}"
 Correct Answer: "${currentQuestion?.correctAnswer}"
-Hints available: ${currentQuestion?.hints?.join(", ")}
+This is question ${currentQuestionIndex + 1} of ${totalQuestions}.
 
 Your EXACT flow:
-1. Ask the question clearly: "Question ${currentQuestionIndex + 1}: ${currentQuestion?.question}"
-2. Wait silently for the user to give their verbal answer.
+1. Start by saying "Question ${currentQuestionIndex + 1}" then ask: "${currentQuestion?.question}"
+2. Wait silently for the user to give their verbal answer. Do not prompt them or say anything until they respond.
 3. After the user responds, evaluate their answer:
-   - If CORRECT: Say "That's correct!" and briefly explain why.
-   - If INCORRECT: Say "Not quite." Gently explain the correct answer is "${currentQuestion?.correctAnswer}" and why.
-4. After giving feedback, end with EXACTLY this phrase: "QUESTION COMPLETE"
+   - If CORRECT: Say "That's correct!" and briefly explain why (1-2 sentences).
+   - If INCORRECT: Say "Not quite." Give the correct answer "${currentQuestion?.correctAnswer}" with a brief explanation.
+4. After giving feedback, end with EXACTLY: "QUESTION COMPLETE"
 
 Rules:
 - Be encouraging and supportive.
-- Keep responses concise (2-3 sentences max for feedback).
-- Always end your feedback with "QUESTION COMPLETE" so the system knows to advance.
-- Speak in ${languageName} throughout, but always say "QUESTION COMPLETE" in English at the end.`;
+- Keep all responses concise.
+- Always end your feedback with "QUESTION COMPLETE" so the system advances to the next question.
+- Speak in ${languageName} throughout, but say "QUESTION COMPLETE" in English at the end.`;
   }, [currentQuestionIndex, currentQuestion, selectedLanguage, totalQuestions]);
 
   const startDiscussion = useCallback(async () => {
@@ -402,23 +401,22 @@ Rules:
                 </div>
               </div>
 
-              {/* Current Question Card */}
+              {/* Voice Session Card */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 dark:text-blue-400 font-bold">
-                      {currentQuestionIndex + 1}
-                    </span>
-                  </div>
-                  <div>
+                {/* Instruction when not started */}
+                {!isActive && !feedbackGiven && (
+                  <div className="mb-6 text-center py-8">
+                    <div className="text-5xl mb-4">🎧</div>
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                      {currentQuestion?.question}
+                      Voice Q&A Session
                     </h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Answer verbally using the voice assistant
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {sessionStarted 
+                        ? "Click below to resume. The agent will continue asking questions."
+                        : "Start the session and the AI agent will ask you questions verbally. Listen and respond out loud!"}
                     </p>
                   </div>
-                </div>
+                )}
 
                 {/* Voice Status Indicator */}
                 {isActive && (
@@ -575,44 +573,32 @@ Rules:
                 </p>
               </div>
 
-              {/* Questions Overview */}
+              {/* Progress Overview */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <span>📋</span> Questions
+                  <span>📋</span> Progress
                 </h3>
-                <div className="space-y-2">
+                <div className="flex justify-center gap-2 mb-4">
                   {questions.map((q, index) => (
                     <div
                       key={q.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
                         index === currentQuestionIndex
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                          : index < currentQuestionIndex
-                          ? 'bg-green-50 dark:bg-green-900/20'
-                          : 'bg-gray-50 dark:bg-gray-700'
-                      }`}
-                    >
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                        index === currentQuestionIndex
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-blue-500 text-white ring-2 ring-blue-300 ring-offset-2'
                           : index < currentQuestionIndex
                           ? 'bg-green-500 text-white'
-                          : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
-                      }`}>
-                        {index < currentQuestionIndex ? '✓' : index + 1}
-                      </div>
-                      <span className={`text-sm truncate ${
-                        index === currentQuestionIndex
-                          ? 'text-blue-700 dark:text-blue-300 font-medium'
-                          : index < currentQuestionIndex
-                          ? 'text-green-700 dark:text-green-300'
-                          : 'text-gray-600 dark:text-gray-400'
-                      }`}>
-                        {q.question.length > 30 ? q.question.substring(0, 30) + '...' : q.question}
-                      </span>
+                          : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
+                      }`}
+                    >
+                      {index < currentQuestionIndex ? '✓' : index + 1}
                     </div>
                   ))}
                 </div>
+                <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                  {currentQuestionIndex < totalQuestions 
+                    ? `Question ${currentQuestionIndex + 1} of ${totalQuestions}` 
+                    : 'All questions completed!'}
+                </p>
               </div>
 
               {/* Tips */}
