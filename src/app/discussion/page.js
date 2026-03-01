@@ -87,8 +87,43 @@ function DiscussionContent() {
       if (conversationRef.current) {
         conversationRef.current.endSession();
       }
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
     };
   }, []);
+
+  // Auto-advance when feedback is given
+  useEffect(() => {
+    if (feedbackGiven && isActive) {
+      feedbackTimerRef.current = setTimeout(() => {
+        handleNextQuestion();
+      }, 2000); // Wait 2 seconds after feedback before advancing
+    }
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, [feedbackGiven, isActive]);
+
+  // Auto-redirect after session complete
+  useEffect(() => {
+    if (sessionComplete) {
+      const redirectTimer = setTimeout(() => {
+        if (packId) {
+          router.push(`/roadmap?packId=${packId}`);
+        } else {
+          router.push('/dashboard');
+        }
+      }, 5000);
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [sessionComplete, packId, router]);
+
+  // Track if agent has given feedback for current question
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const feedbackTimerRef = useRef(null);
 
   // Build the agent prompt with current question context
   const buildAgentPrompt = useCallback(() => {
@@ -102,15 +137,19 @@ Current Question (${currentQuestionIndex + 1} of ${totalQuestions}): "${currentQ
 Correct Answer: "${currentQuestion?.correctAnswer}"
 Hints available: ${currentQuestion?.hints?.join(", ")}
 
-Your tasks:
-1. If this is the start, greet the user warmly and ask Question ${currentQuestionIndex + 1}.
-2. After the user responds, evaluate their answer:
-   - If CORRECT: Praise them, explain why they're right, and say "Moving to the next question" if there are more questions.
-   - If INCORRECT: Gently explain what was wrong, provide the correct answer with explanation, and optionally give a hint for similar questions in the future.
-3. Be encouraging and supportive regardless of whether the answer is right or wrong.
-4. Keep responses concise but informative.
+Your EXACT flow:
+1. Ask the question clearly: "Question ${currentQuestionIndex + 1}: ${currentQuestion?.question}"
+2. Wait silently for the user to give their verbal answer.
+3. After the user responds, evaluate their answer:
+   - If CORRECT: Say "That's correct!" and briefly explain why.
+   - If INCORRECT: Say "Not quite." Gently explain the correct answer is "${currentQuestion?.correctAnswer}" and why.
+4. After giving feedback, end with EXACTLY this phrase: "QUESTION COMPLETE"
 
-Remember: Always respond in ${languageName}!`;
+Rules:
+- Be encouraging and supportive.
+- Keep responses concise (2-3 sentences max for feedback).
+- Always end your feedback with "QUESTION COMPLETE" so the system knows to advance.
+- Speak in ${languageName} throughout, but always say "QUESTION COMPLETE" in English at the end.`;
   }, [currentQuestionIndex, currentQuestion, selectedLanguage, totalQuestions]);
 
   const startDiscussion = useCallback(async () => {
@@ -174,6 +213,10 @@ Remember: Always respond in ${languageName}!`;
             setTranscript(prev => [...prev, { type: 'user', message: message.message }]);
           } else if (message.source === 'ai') {
             setTranscript(prev => [...prev, { type: 'agent', message: message.message }]);
+            // Check if agent has completed giving feedback
+            if (message.message && message.message.toUpperCase().includes('QUESTION COMPLETE')) {
+              setFeedbackGiven(true);
+            }
           }
         },
       };
@@ -206,6 +249,9 @@ Remember: Always respond in ${languageName}!`;
   }, []);
 
   const handleNextQuestion = useCallback(async () => {
+    // Reset feedback state
+    setFeedbackGiven(false);
+    
     // Record response for current question
     setResponses(prev => [...prev, {
       questionIndex: currentQuestionIndex,
@@ -223,7 +269,7 @@ Remember: Always respond in ${languageName}!`;
         // Small delay before restarting
         setTimeout(() => {
           startDiscussion();
-        }, 500);
+        }, 1000);
       }
     } else {
       // All questions completed
@@ -247,6 +293,7 @@ Remember: Always respond in ${languageName}!`;
     setSessionComplete(false);
     setTranscript([]);
     setError(null);
+    setFeedbackGiven(false);
   };
 
   const getProgressPercentage = () => {
@@ -291,49 +338,46 @@ Remember: Always respond in ${languageName}!`;
           </p>
         </div>
 
-        {/* Session Complete Card */}
+        {/* Concept Mastered Screen */}
         {sessionComplete ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Discussion Complete!
+            <div className="text-8xl mb-6 animate-bounce">🏆</div>
+            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600 mb-4">
+              Concept Mastered!
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              You've completed all {totalQuestions} questions. Great job practicing!
+            <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
+              Excellent work! You've completed all {totalQuestions} questions.
             </p>
             
-            {/* Summary */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 mb-6">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Session Summary</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-white dark:bg-gray-600 rounded-lg p-3">
-                  <div className="text-2xl font-bold text-blue-600">{totalQuestions}</div>
-                  <div className="text-gray-600 dark:text-gray-300">Questions Asked</div>
-                </div>
-                <div className="bg-white dark:bg-gray-600 rounded-lg p-3">
-                  <div className="text-2xl font-bold text-green-600">
-                    {SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-300">Language Used</div>
-                </div>
-              </div>
+            {/* Success Badge */}
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 px-6 py-3 rounded-full mb-8">
+              <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-green-700 dark:text-green-400 font-semibold">
+                {topicTitle !== 'Practice Session' ? topicTitle : 'Topic'} Complete
+              </span>
+            </div>
+
+            {/* Auto-redirect notice */}
+            <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 mb-6">
+              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              <span>Redirecting to roadmap in 5 seconds...</span>
             </div>
 
             <div className="flex gap-4 justify-center">
               <button
                 onClick={handleRestart}
-                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105"
+                className="px-8 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
-                Start New Discussion
+                Practice Again
               </button>
-              {packId && (
-                <button
-                  onClick={handleBackToRoadmap}
-                  className="px-8 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
-                >
-                  Back to Roadmap
-                </button>
-              )}
+              <button
+                onClick={handleBackToRoadmap}
+                className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105"
+              >
+                Continue to Roadmap
+              </button>
             </div>
           </div>
         ) : (
@@ -408,11 +452,23 @@ Remember: Always respond in ${languageName}!`;
                   </div>
                 )}
 
+                {/* Auto-advancing indicator */}
+                {feedbackGiven && (
+                  <div className="mb-6 flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                    <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                      {currentQuestionIndex < totalQuestions - 1 
+                        ? "Moving to next question..." 
+                        : "Completing session..."}
+                    </span>
+                  </div>
+                )}
+
                 {/* Action Buttons */}
                 <div className="flex gap-3">
                   <button
                     onClick={handleToggle}
-                    disabled={isConnecting}
+                    disabled={isConnecting || feedbackGiven}
                     className={`flex-1 py-3 px-6 rounded-xl font-semibold text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
                       isActive
                         ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
@@ -429,7 +485,7 @@ Remember: Always respond in ${languageName}!`;
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                           <rect x="5" y="5" width="10" height="10" rx="1" />
                         </svg>
-                        Stop
+                        Stop Session
                       </>
                     ) : (
                       <>
@@ -437,27 +493,21 @@ Remember: Always respond in ${languageName}!`;
                           <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
                         </svg>
-                        {sessionStarted ? "Resume" : "Start Discussion"}
+                        {sessionStarted ? "Resume Session" : "Start Session"}
                       </>
                     )}
                   </button>
 
-                  {sessionStarted && (
+                  {sessionStarted && !isActive && !feedbackGiven && (
                     <button
                       onClick={handleNextQuestion}
                       disabled={isConnecting}
                       className="py-3 px-6 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center gap-2"
                     >
-                      {currentQuestionIndex < totalQuestions - 1 ? (
-                        <>
-                          Next Question
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </>
-                      ) : (
-                        "Finish"
-                      )}
+                      Skip Question
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </button>
                   )}
                 </div>
@@ -573,8 +623,8 @@ Remember: Always respond in ${languageName}!`;
                 <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <li>• Speak clearly and at a normal pace</li>
                   <li>• Wait for the agent to finish before responding</li>
-                  <li>• You can ask for hints if you're stuck</li>
-                  <li>• Click "Next Question" when ready to proceed</li>
+                  <li>• The agent will give feedback and auto-advance</li>
+                  <li>• Complete all 5 questions to master the concept</li>
                 </ul>
               </div>
             </div>
