@@ -152,6 +152,10 @@ function TopicSessionContent() {
         const result = await response.json();
         console.log('Diagnostic submission result:', result);
 
+        // Update local state with the score from the API
+        setQuizScore(result.score);
+        setShowResults(true);
+
         // Reload the topic data to get updated mastery and learning modules
         const { data: { user } } = await supabase.auth.getUser();
         const { data } = await supabase
@@ -164,9 +168,6 @@ function TopicSessionContent() {
         if (pack?.topic_session) {
           setTopicData(pack.topic_session);
         }
-
-        // Redirect to discussion page immediately after diagnostic
-        router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
 
       } catch (error) {
         console.error('Error submitting diagnostic:', error);
@@ -426,49 +427,110 @@ function TopicSessionContent() {
     const questions = currentView === 'diagnostic' 
       ? topicData.diagnostic?.questions || []
       : topicData.final_quiz?.questions || [];
-
+    
+    const diagnosticAnalysis = topicData.diagnostic?.submission?.analysis || {};
+    const perQuestion = diagnosticAnalysis.per_question || [];
+    
     return (
       <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
         <Header />
         
         <main className="grow pt-24 pb-12">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8 shadow-lg">
+              
+              {/* Score Header */}
               <div className="text-center mb-8">
                 <div className="text-6xl mb-4">
-                  {quizScore.percent >= 80 ? '🎉' : quizScore.percent >= 60 ? '👍' : '📚'}
+                  {quizScore.percent >= 0.8 ? '🎉' : quizScore.percent >= 0.6 ? '👍' : '📚'}
                 </div>
                 <h1 className="text-3xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
-                  Quiz Complete!
+                  {currentView === 'diagnostic' ? 'Diagnostic' : 'Final Quiz'} Results
                 </h1>
-                <p className="text-xl text-[#5a5a5a] dark:text-[#b8b3a3]">
-                  You scored {quizScore.num_correct} out of {quizScore.num_total} ({Math.round(quizScore.percent)}%)
+                <p className="text-xl text-[#5a5a5a] dark:text-[#b8b3a3] mb-4">
+                  You scored {quizScore.num_correct} out of {quizScore.num_total}
                 </p>
+                <div className="inline-block px-6 py-3 rounded-full bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white text-2xl font-bold">
+                  {Math.round(quizScore.percent * 100)}%
+                </div>
               </div>
 
-              {/* Diagnostic-specific: Mastery Updates */}
+              {/* Detailed Results */}
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
+                  Question Review
+                </h2>
+                <div className="space-y-4">
+                  {questions.map((q, index) => {
+                    const userAnswer = topicData.diagnostic?.submission?.answers?.find(
+                      a => a.question_id === q.question_id
+                    );
+                    const isCorrect = userAnswer?.answer === q.correct_answer;
+                    const questionAnalysis = perQuestion.find(pq => pq.question_id === q.question_id);
+                    
+                    return (
+                      <div 
+                        key={q.question_id}
+                        className={`p-6 rounded-xl border-2 ${
+                          isCorrect 
+                            ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
+                            : 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="text-2xl">
+                            {isCorrect ? '✓' : '✗'}
+                          </span>
+                          <div className="flex-1">
+                            <p className="font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
+                              Q{index + 1}: {q.prompt}
+                            </p>
+                            
+                            {!isCorrect && (
+                              <div className="space-y-2 text-sm">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-red-600 dark:text-red-400 font-semibold">Your answer:</span>
+                                  <span className="text-red-700 dark:text-red-300">{userAnswer?.answer || 'No answer'}</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-green-600 dark:text-green-400 font-semibold">Correct answer:</span>
+                                  <span className="text-green-700 dark:text-green-300">{q.correct_answer}</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {isCorrect && (
+                              <p className="text-sm text-green-700 dark:text-green-300">
+                                Correct! You answered: {userAnswer?.answer}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mastery Analysis */}
               {currentView === 'diagnostic' && topicData?.subskills && (
-                <div className="mb-8 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-xl p-6 border border-[#d4c4dc] dark:border-[#4a4a4a]">
-                  <h2 className="text-lg font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
-                    📊 Skill Mastery Analysis
+                <div className="mb-8 p-6 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-xl">
+                  <h2 className="text-xl font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
+                    Your Skill Mastery
                   </h2>
                   <div className="space-y-3">
                     {topicData.subskills.map((skill) => {
                       const masteryPercent = Math.round((skill.mastery || 0) * 100);
-                      const isWeak = masteryPercent < 70;
+                      const isWeak = masteryPercent < 100;
                       
                       return (
                         <div key={skill.subskill_id} className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-lg p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3d3] flex items-center gap-2">
-                              {isWeak ? '⚠️' : '✓'} {skill.name}
+                            <span className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3d3]">
+                              {skill.name}
                             </span>
                             <span className={`text-sm font-bold ${
-                              isWeak 
-                                ? 'text-[#c09080]' 
-                                : masteryPercent === 100 
-                                  ? 'text-green-600 dark:text-green-400' 
-                                  : 'text-blue-600 dark:text-blue-400'
+                              isWeak ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                             }`}>
                               {masteryPercent}%
                             </span>
@@ -476,74 +538,32 @@ function TopicSessionContent() {
                           <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-2">
                             <div 
                               className={`h-2 rounded-full transition-all ${
-                                isWeak 
-                                  ? 'bg-[#c09080]' 
-                                  : masteryPercent === 100 
-                                    ? 'bg-green-500' 
-                                    : 'bg-blue-500'
+                                isWeak ? 'bg-red-500' : 'bg-green-500'
                               }`}
                               style={{ width: `${Math.max(masteryPercent, 5)}%` }}
                             />
                           </div>
-                          {isWeak && (
-                            <p className="text-xs text-[#5a5a5a] dark:text-[#b8b3a3] mt-2">
-                              📚 Learning module available to strengthen this skill
-                            </p>
-                          )}
                         </div>
                       );
                     })}
                   </div>
-                  {topicData?.learning_session?.active_modules?.length > 0 && (
-                    <div className="mt-4 p-3 bg-[#f5d5cb] dark:bg-[#5a4a45] rounded-lg border border-[#d4c4dc] dark:border-[#6a5a70]">
-                      <p className="text-sm text-[#2d2d2d] dark:text-[#e8e3d3]">
-                        💡 <strong>{topicData.learning_session.active_modules.length} learning modules</strong> have been generated for your weak areas. Continue to review them!
-                      </p>
-                    </div>
-                  )}
                 </div>
               )}
 
-              {/* Results Summary */}
-              <div className="mb-8 space-y-4">
-                <h2 className="text-lg font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">Review Your Answers</h2>
-                {questions.map((q, index) => {
-                  const userAnswer = answers[q.question_id];
-                  const isCorrect = userAnswer === q.correct_answer;
-                  
-                  return (
-                    <div key={q.question_id} className={`p-4 rounded-xl border-2 ${
-                      isCorrect 
-                        ? 'border-[#d4e5d4] bg-[#d4e5d4] dark:bg-[#4a5a4a]' 
-                        : 'border-[#f5d5cb] bg-[#f5d5cb] dark:bg-[#5a4a45]'
-                    }`}>
-                      <div className="flex items-start gap-3">
-                        <span className="text-2xl">{isCorrect ? '✅' : '❌'}</span>
-                        <div className="flex-1">
-                          <p className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
-                            Q{index + 1}: {q.prompt}
-                          </p>
-                          <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3]">
-                            Your answer: <span className={isCorrect ? 'text-[#4a5a4a] dark:text-[#c8e6d0] font-semibold' : 'text-[#5a4a45] dark:text-[#e8b4a0] font-semibold'}>{userAnswer}</span>
-                          </p>
-                          {!isCorrect && (
-                            <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mt-1">
-                              Correct answer: <span className="text-[#4a5a4a] dark:text-[#c8e6d0] font-semibold">{q.correct_answer}</span>
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* Next Steps */}
+              <div className="text-center">
+                <button
+                  onClick={handleContinueAfterQuiz}
+                  className="px-8 py-4 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-xl hover:shadow-lg font-semibold text-lg transition-all"
+                >
+                  {currentView === 'diagnostic' ? '💬 Continue to Discussion' : '🎉 View Roadmap'}
+                </button>
+                <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mt-4">
+                  {currentView === 'diagnostic' 
+                    ? 'Next: Discuss this topic with an AI tutor to strengthen your understanding'
+                    : 'Congratulations on completing this topic!'}
+                </p>
               </div>
-
-              <button
-                onClick={handleContinueAfterQuiz}
-                className="w-full px-8 py-4 rounded-lg font-semibold transition-all bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-lg text-lg"
-              >
-                Continue to Discussion 🗣️
-              </button>
             </div>
           </div>
         </main>

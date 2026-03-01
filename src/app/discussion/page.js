@@ -161,6 +161,30 @@ function DiscussionContent() {
     setIsActive(false);
     setIsSpeaking(false);
     setIsQuitting(true);
+    
+    // Call API to generate final quiz based on weak subskills
+    if (packId) {
+      try {
+        const response = await fetch('/api/complete-discussion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            coursePackId: packId
+          })
+        });
+
+        if (!response.ok) {
+          console.error('Failed to complete discussion');
+        } else {
+          const result = await response.json();
+          console.log('Discussion completed, final quiz ready:', result);
+        }
+      } catch (error) {
+        console.error('Error completing discussion:', error);
+      }
+    }
   };
 
   // Build the agent prompt

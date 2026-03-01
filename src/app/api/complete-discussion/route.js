@@ -59,14 +59,10 @@ export async function POST(request) {
     // Check if there are weak subskills
     const weakSubskills = coursePack.topic_session.diagnostic?.submission?.analysis?.weak_subskills || [];
     
-    // Update state based on weak subskills
-    if (weakSubskills.length > 0) {
-      // Has weak subskills, go to learning session
-      coursePack.topic_session.state = 'learning_session';
-    } else {
-      // No weak subskills, proceed to final quiz
-      coursePack.topic_session.state = 'final_quiz';
-    }
+    // Generate final quiz based on weak subskills
+    const finalQuiz = generateFinalQuiz(coursePack, weakSubskills);
+    coursePack.topic_session.final_quiz = finalQuiz;
+    coursePack.topic_session.state = 'final_quiz';
 
     // Update the course pack in Supabase
     const updatedCoursePacks = coursePackData.course_packs.map(pack => {
@@ -91,14 +87,15 @@ export async function POST(request) {
       );
     }
 
-    console.log(`Discussion completed, transitioning to: ${coursePack.topic_session.state}`);
+    console.log(`Discussion completed, final quiz generated with ${coursePack.topic_session.final_quiz.questions.length} questions`);
 
     return NextResponse.json({
       success: true,
       nextState: coursePack.topic_session.state,
+      finalQuiz: coursePack.topic_session.final_quiz,
       hasWeakSubskills: weakSubskills.length > 0,
       weakSubskillCount: weakSubskills.length,
-      message: 'Discussion completed successfully'
+      message: 'Discussion completed, final quiz ready'
     });
 
   } catch (error) {
@@ -108,4 +105,80 @@ export async function POST(request) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Generate final quiz based on weak subskills
+ * Only tests weak subskills identified from diagnostic
+ */
+function generateFinalQuiz(coursePack, weakSubskills) {
+  // Only test weak subskills - if none, skip final quiz
+  if (weakSubskills.length === 0) {
+    return {
+      quiz_id: `final_v1_${Date.now()}`,
+      questions: [],
+      submission: {
+        answers: [],
+        score: {
+          num_correct: 0,
+          num_total: 0,
+          percent: 0.0
+        },
+        passed: true,
+        weak_subskills: []
+      }
+    };
+  }
+
+  // Create subskill lookup
+  const subskillById = {};
+  coursePack.topic_session.subskills.forEach(s => {
+    subskillById[s.subskill_id] = s;
+  });
+
+  const questions = [];
+  let qIndex = 1;
+  const questionsPerSubskill = 2;
+
+  // Generate questions ONLY for weak subskills
+  for (const sid of weakSubskills) {
+    const subskill = subskillById[sid];
+    if (!subskill) continue;
+
+    const name = subskill.name || 'Untitled Skill';
+
+    // Generate exactly 2 questions per weak subskill
+    for (let i = 0; i < questionsPerSubskill; i++) {
+      questions.push({
+        question_id: `fq${qIndex}`,
+        subskill_id: sid,
+        type: 'mcq',
+        difficulty: 2,
+        prompt: `Final check for ${name}: Question ${i + 1}`,
+        choices: [
+          'Option A',
+          'Option B',
+          'Option C',
+          'Option D'
+        ],
+        correct_answer: 'Option B'
+      });
+      qIndex++;
+    }
+  }
+
+  return {
+    quiz_id: `final_v1_${Date.now()}`,
+    questions: questions,
+    submission: {
+      answers: [],
+      score: {
+        num_correct: 0,
+        num_total: questions.length,
+        percent: 0.0
+      },
+      passed: false,
+      weak_subskills: []
+    }
+  };
 }
