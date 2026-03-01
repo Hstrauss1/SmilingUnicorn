@@ -94,8 +94,8 @@ export default function DashboardPage() {
       
       if (user) {
         try {
-          // First try to fetch from Supabase (formatted with roadmap_json)
-          console.log('Attempting to load course packs from Supabase...');
+          // Fetch from Supabase (formatted with roadmap_json)
+          console.log('Loading course packs from Supabase...');
           const formattedPacks = await getUserCoursePacksFormatted();
           
           if (formattedPacks && formattedPacks.length > 0) {
@@ -111,7 +111,9 @@ export default function DashboardPage() {
               totalCoursePacks: formattedPacks.length,
               totalTopics: totalTopics,
               completedTopics: completedTopics,
-              averageProgress: Math.round(formattedPacks.reduce((sum, pack) => sum + pack.progress, 0) / formattedPacks.length),
+              averageProgress: formattedPacks.length > 0 
+                ? Math.round(formattedPacks.reduce((sum, pack) => sum + pack.progress, 0) / formattedPacks.length)
+                : 0,
               currentStreak: 0
             };
 
@@ -119,17 +121,32 @@ export default function DashboardPage() {
             setSelectedPack(formattedPacks[0]);
             setStats(supabaseStats);
           } else {
-            // No Supabase data, fall back to generated files
-            console.log('No course packs in Supabase, loading from generated files...');
-            await loadMockData();
+            // No Supabase data yet
+            console.log('No course packs in Supabase yet');
+            setCoursePacks([]);
+            setSelectedPack(null);
+            setStats({
+              totalCoursePacks: 0,
+              totalTopics: 0,
+              completedTopics: 0,
+              averageProgress: 0,
+              currentStreak: 0
+            });
           }
         } catch (error) {
-          console.error('Error loading from Supabase, falling back to generated files:', error);
-          // Fallback to Python-generated files
-          await loadMockData();
+          console.error('Error loading from Supabase:', error);
+          setCoursePacks([]);
+          setSelectedPack(null);
+          setStats({
+            totalCoursePacks: 0,
+            totalTopics: 0,
+            completedTopics: 0,
+            averageProgress: 0,
+            currentStreak: 0
+          });
         }
       } else {
-        // Not logged in, show login prompt
+        // Not logged in
         console.log('User not authenticated');
       }
       

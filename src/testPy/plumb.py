@@ -111,9 +111,10 @@ def main(pdf_dir: str, title: str, output_dir: str = None):
     with open(session_path, "w", encoding="utf-8") as f:
         json.dump(session, f, indent=2)
 
-    print("Wrote:", chunks_path)
-    print("Wrote:", session_path)
-    print("Total chunks:", len(all_chunks))
+    print(f"SUCCESS: Generated {len(all_chunks)} chunks from {len([f for f in os.listdir(pdf_dir) if f.lower().endswith('.pdf')])} PDF files")
+    print(f"CHUNKS_FILE: {chunks_path}")
+    print(f"SESSION_FILE: {session_path}")
+    print(f"COURSE_PACK_ID: {course_pack_id}")
 
 if __name__ == "__main__":
     # Example usage:

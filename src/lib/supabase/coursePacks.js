@@ -64,7 +64,7 @@ export async function getUserCoursePacks() {
 
 /**
  * Get all course packs for the current user with formatted data
- * Transforms roadmap_json into the format expected by the dashboard
+ * Reads from the course_packs JSONB array
  */
 export async function getUserCoursePacksFormatted() {
   const supabase = createClient();
@@ -74,21 +74,29 @@ export async function getUserCoursePacksFormatted() {
 
   const { data, error } = await supabase
     .from('course_packs')
-    .select('*')
+    .select('course_packs')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No row exists yet for this user
+      return [];
+    }
+    throw error;
+  }
   
-  if (!data || data.length === 0) return [];
+  if (!data || !data.course_packs) return [];
 
-  // Transform Supabase data into dashboard format
-  return data.map(pack => {
-    const roadmapJson = pack.roadmap_json;
-    const topicSession = roadmapJson?.topic_session;
+  // The course_packs column is already a JSONB array of course packs
+  const coursePacksArray = data.course_packs;
+
+  // Transform each course pack into dashboard format
+  return coursePacksArray.map(pack => {
+    const topicSession = pack.topic_session;
     
     if (!topicSession) {
-      console.warn(`Course pack ${pack.id} has no topic session in roadmap_json`);
+      console.warn(`Course pack ${pack.course_pack_id} has no topic session`);
       return null;
     }
 
@@ -111,12 +119,11 @@ export async function getUserCoursePacksFormatted() {
     // Return formatted course pack
     return {
       id: pack.course_pack_id,
-      supabase_id: pack.id, // Keep Supabase UUID for updates
       title: pack.title,
       document_name: pack.document_name,
       progress: pack.progress || 0,
       status: pack.status || 'in_progress',
-      topic_sessions: [topic], // Currently one topic per pack, expand later
+      topic_sessions: [topic],
       created_at: pack.created_at,
       updated_at: pack.updated_at
     };

@@ -19,74 +19,77 @@ export async function loadGeneratedCoursePacks() {
     return [];
   }
   
-  // Fetch all course packs for this user
-  const { data: coursePacksData, error: fetchError } = await supabase
+  // Fetch user's course_packs row
+  const { data, error: fetchError } = await supabase
     .from('course_packs')
-    .select('*')
+    .select('course_packs')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .single();
   
   if (fetchError) {
+    if (fetchError.code === 'PGRST116') {
+      // No row exists yet
+      console.debug('No course packs found for user');
+      return [];
+    }
     console.error('Error fetching course packs:', fetchError);
     return [];
   }
   
-  if (!coursePacksData || coursePacksData.length === 0) {
-    console.debug('No course packs found for user');
+  if (!data || !data.course_packs || data.course_packs.length === 0) {
+    console.debug('No course packs in array');
     return [];
   }
   
   const coursePacks = [];
   
-  for (const packData of coursePacksData) {
+  for (const pack of data.course_packs) {
     try {
-      const roadmapJson = packData.roadmap_json;
-      
-      if (!roadmapJson || !roadmapJson.topic_session) {
-        console.debug(`Skipping ${packData.course_pack_id}: No topic session data`);
+      if (!pack.topic_session) {
+        console.debug(`Skipping ${pack.course_pack_id}: No topic session data`);
         continue;
       }
       
       // Skip course packs with placeholder subskills (incomplete generation)
-      const hasPlaceholderSubskills = roadmapJson.topic_session.subskills.some(
+      const hasPlaceholderSubskills = pack.topic_session.subskills.some(
         skill => skill.subskill_id === 'subskill_placeholder' || 
                  skill.name.includes('Placeholder') ||
                  !skill.name || skill.name.trim() === ''
       );
       
       if (hasPlaceholderSubskills) {
-        console.debug(`Skipping ${packData.course_pack_id}: Has placeholder subskills (incomplete topic extraction)`);
+        console.debug(`Skipping ${pack.course_pack_id}: Has placeholder subskills (incomplete topic extraction)`);
         continue;
       }
       
       const topic = {
-        id: roadmapJson.topic_session.topic_id,
-        title: roadmapJson.topic_session.title,
-        state: roadmapJson.topic_session.state,
-        completion_status: roadmapJson.topic_session.completion?.status || "not_started",
-        subskills: roadmapJson.topic_session.subskills.map(skill => ({
+        id: pack.topic_session.topic_id,
+        title: pack.topic_session.title,
+        state: pack.topic_session.state,
+        completion_status: pack.topic_session.completion?.status || "not_started",
+        subskills: pack.topic_session.subskills.map(skill => ({
           id: skill.subskill_id,
           name: skill.name,
           mastery: skill.mastery
         })),
-        diagnostic: roadmapJson.topic_session.diagnostic,
-        learning_session: roadmapJson.topic_session.learning_session,
-        final_quiz: roadmapJson.topic_session.final_quiz
+        diagnostic: pack.topic_session.diagnostic,
+        learning_session: pack.topic_session.learning_session,
+        final_quiz: pack.topic_session.final_quiz
       };
       
       // Create a course pack for this topic
       const coursePack = {
-        id: packData.course_pack_id,
-        title: packData.title,
-        document_name: packData.document_name || "Generated from PDF",
-        progress: packData.progress || 0,
-        status: packData.status || 'in_progress',
+        id: pack.course_pack_id,
+        title: pack.title,
+        document_name: pack.document_name || "Generated from PDF",
+        progress: pack.progress || 0,
+        status: pack.status || 'in_progress',
         topic_sessions: [topic]
       };
       
       coursePacks.push(coursePack);
     } catch (error) {
-      console.error(`Error processing course pack ${packData.course_pack_id}:`, error);
+      console.error(`Error processing course pack ${pack.course_pack_id}:`, error);
     }
   }
   
@@ -108,20 +111,22 @@ export async function loadTopicSessionById(topicId, packId) {
       return null;
     }
     
-    // Fetch the course pack by course_pack_id
-    const { data: packData, error: fetchError } = await supabase
+    // Fetch user's course_packs row
+    const { data, error: fetchError } = await supabase
       .from('course_packs')
-      .select('roadmap_json')
-      .eq('course_pack_id', packId)
+      .select('course_packs')
       .eq('user_id', user.id)
       .single();
     
-    if (fetchError || !packData) {
+    if (fetchError || !data) {
       console.error('Error fetching topic session:', fetchError);
       return null;
     }
     
-    return packData.roadmap_json?.topic_session || null;
+    // Find the course pack with matching course_pack_id
+    const pack = data.course_packs.find(p => p.course_pack_id === packId);
+    
+    return pack?.topic_session || null;
   } catch (error) {
     console.error('Error loading topic session:', error);
     return null;
