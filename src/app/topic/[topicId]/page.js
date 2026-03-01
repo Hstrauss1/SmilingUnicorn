@@ -128,15 +128,14 @@ function TopicSessionContent() {
       
       if (hasLearningModules) {
         setCurrentView('learning');
+        setShowResults(false);
+        setCurrentQuestionIndex(0);
+        setAnswers({});
+        setQuizScore(null);
       } else {
-        // Skip directly to final quiz if no learning modules
-        setCurrentView('final_quiz');
+        // Navigate to discussion page for voice practice
+        router.push(`/discussion?topicId=${topicId}&packId=${packId}&topicTitle=${encodeURIComponent(topicData?.title || '')}`);
       }
-      
-      setShowResults(false);
-      setCurrentQuestionIndex(0);
-      setAnswers({});
-      setQuizScore(null);
     } else if (currentView === 'final_quiz') {
       router.push(`/roadmap?packId=${packId}`);
     }
@@ -423,7 +422,7 @@ function TopicSessionContent() {
                 {currentView === 'diagnostic' 
                   ? (topicData?.learning_session?.active_modules?.length > 0 
                       ? 'Continue to Learning Modules' 
-                      : 'Continue to Final Quiz')
+                      : 'Continue to Discussion')
                   : 'Back to Roadmap'}
               </button>
             </div>

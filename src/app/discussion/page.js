@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -52,9 +52,14 @@ const SAMPLE_QUESTIONS = [
   },
 ];
 
-export default function DiscussionPage() {
+function DiscussionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // Get topic context from URL params
+  const topicId = searchParams.get('topicId');
+  const packId = searchParams.get('packId');
+  const topicTitle = searchParams.get('topicTitle') || 'Practice Session';
   
   // Voice agent state
   const [selectedLanguage, setSelectedLanguage] = useState("en");
@@ -248,18 +253,41 @@ Remember: Always respond in ${languageName}!`;
     return ((currentQuestionIndex + 1) / totalQuestions) * 100;
   };
 
+  // Handle navigation back to roadmap
+  const handleBackToRoadmap = () => {
+    if (packId) {
+      router.push(`/roadmap?packId=${packId}`);
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <Header />
       
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+      <main className="flex-1 container mx-auto px-4 py-8 pt-24 max-w-4xl">
+        {/* Back Button */}
+        {packId && (
+          <button 
+            onClick={handleBackToRoadmap}
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 flex items-center gap-1"
+          >
+            <span>&larr;</span> Back to Roadmap
+          </button>
+        )}
+
         {/* Page Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             🎙️ Voice Discussion
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Practice your knowledge with our AI voice assistant
+            {topicTitle !== 'Practice Session' ? (
+              <>Practicing: <span className="font-medium">{topicTitle}</span></>
+            ) : (
+              'Practice your knowledge with our AI voice assistant'
+            )}
           </p>
         </div>
 
@@ -291,12 +319,22 @@ Remember: Always respond in ${languageName}!`;
               </div>
             </div>
 
-            <button
-              onClick={handleRestart}
-              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105"
-            >
-              Start New Discussion
-            </button>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={handleRestart}
+                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105"
+              >
+                Start New Discussion
+              </button>
+              {packId && (
+                <button
+                  onClick={handleBackToRoadmap}
+                  className="px-8 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                >
+                  Back to Roadmap
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-3">
@@ -546,5 +584,17 @@ Remember: Always respond in ${languageName}!`;
       
       <Footer />
     </div>
+  );
+}
+
+export default function DiscussionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <DiscussionContent />
+    </Suspense>
   );
 }
