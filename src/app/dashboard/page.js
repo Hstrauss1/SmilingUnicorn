@@ -453,10 +453,10 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <Link
-                      href="/upload"
+                      href={`/roadmap?packId=${selectedPack.id}`}
                       className="px-4 py-2 bg-gradient-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
                     >
-                      + New Roadmap
+                      View Roadmap
                     </Link>
                   </div>
                   
@@ -492,12 +492,13 @@ export default function DashboardPage() {
                       return (
                         <div
                           key={topic.id}
-                          className={`p-4 rounded-xl border-2 transition-all ${
+                          onClick={() => router.push(`/roadmap?packId=${selectedPack.id}`)}
+                          className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
                             isCompleted
-                              ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                              ? "border-green-500 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
                               : isInProgress
-                              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                              : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 opacity-60"
+                              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                              : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 opacity-60 hover:opacity-80"
                           }`}
                         >
                           <div className="flex items-start justify-between mb-3">
@@ -541,6 +542,7 @@ export default function DashboardPage() {
                             {/* All topics are accessible - no locked topics */}
                             <Link
                               href={`/topic/${topic.id}?packId=${selectedPack.id}`}
+                              onClick={(e) => e.stopPropagation()}
                               className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
                                 isCompleted
                                   ? "bg-green-600 text-white hover:bg-green-700"
