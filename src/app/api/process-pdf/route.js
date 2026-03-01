@@ -298,7 +298,6 @@ export async function POST(request) {
         .from('course_packs')
         .update({
           course_packs: updatedCoursePacks,
-          updated_at: new Date().toISOString()
         })
         .eq('id', existingRow.id)
         .select()
