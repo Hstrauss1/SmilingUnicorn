@@ -9,10 +9,8 @@ export default function Footer() {
             © 2026 Hudson Strauss, Raphael Kusuma, Johan Kou
           </p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-[#e8e3d3] transition-colors">Twitter</a>
-            <a href="#" className="hover:text-[#e8e3d3] transition-colors">LinkedIn</a>
-            <a href="#" className="hover:text-[#e8e3d3] transition-colors">GitHub</a>
-            <a href="#" className="hover:text-[#e8e3d3] transition-colors">Discord</a>
+            <a href="#" className="hover:text-[#e8e3d3] transition-colors">Devpost</a>
+            <a href="https://github.com/Hstrauss1/SmilingUnicorn" className="hover:text-[#e8e3d3] transition-colors">GitHub</a>
           </div>
         </div>
       </div>
