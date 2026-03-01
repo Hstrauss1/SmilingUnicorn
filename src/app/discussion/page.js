@@ -130,25 +130,24 @@ function DiscussionContent() {
     
     return `You are a friendly educational discussion facilitator conducting an interactive voice Q&A session.
 
-IMPORTANT: You MUST speak in ${languageName} at all times. The user cannot see the questions on screen, so you must ask them verbally.
+IMPORTANT: You MUST speak in ${languageName} at all times.
 
-Question to ask: "${currentQuestion?.question}"
-Correct Answer: "${currentQuestion?.correctAnswer}"
+You have just asked the user this question: "${currentQuestion?.question}"
+The correct answer is: "${currentQuestion?.correctAnswer}"
 This is question ${currentQuestionIndex + 1} of ${totalQuestions}.
 
-Your EXACT flow:
-1. Start by saying "Question ${currentQuestionIndex + 1}" then ask: "${currentQuestion?.question}"
-2. Wait silently for the user to give their verbal answer. Do not prompt them or say anything until they respond.
-3. After the user responds, evaluate their answer:
-   - If CORRECT: Say "That's correct!" and briefly explain why (1-2 sentences).
-   - If INCORRECT: Say "Not quite." Give the correct answer "${currentQuestion?.correctAnswer}" with a brief explanation.
-4. After giving feedback, end with EXACTLY: "QUESTION COMPLETE"
+Your task:
+1. Wait for the user to give their verbal answer. Do not say anything until they respond.
+2. After the user responds, evaluate their answer:
+   - If their answer matches or is close to "${currentQuestion?.correctAnswer}": Say "That's correct!" and briefly explain why (1-2 sentences).
+   - If their answer is wrong: Say "Not quite." Then say "The correct answer is ${currentQuestion?.correctAnswer}" with a brief explanation.
+3. After giving feedback, you MUST end with exactly: "QUESTION COMPLETE"
 
 Rules:
 - Be encouraging and supportive.
-- Keep all responses concise.
-- Always end your feedback with "QUESTION COMPLETE" so the system advances to the next question.
-- Speak in ${languageName} throughout, but say "QUESTION COMPLETE" in English at the end.`;
+- Keep all responses concise (2-3 sentences max).
+- You MUST always end your feedback by saying "QUESTION COMPLETE" exactly - this triggers the next question.
+- Speak in ${languageName} throughout, but always say "QUESTION COMPLETE" in English at the very end.`;
   }, [currentQuestionIndex, currentQuestion, selectedLanguage, totalQuestions]);
 
   const startDiscussion = useCallback(async () => {
@@ -164,17 +163,22 @@ Rules:
 
       const languageName = SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English";
 
+      // Build the system prompt for this specific question
+      const systemPrompt = buildAgentPrompt();
+      
+      // Build the first message - have the agent immediately ask the question
+      const firstMessage = `Question ${currentQuestionIndex + 1}: ${currentQuestion?.question}`;
+
       const sessionConfig = {
         agentId: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID,
-        dynamicVariables: {
-          languageName: languageName,
-          selectedLanguage: selectedLanguage,
-          currentQuestion: currentQuestion?.question || "",
-          currentQuestionNumber: currentQuestionIndex + 1,
-          totalQuestions: totalQuestions,
-          correctAnswer: currentQuestion?.correctAnswer || "",
-          hints: currentQuestion?.hints?.join(", ") || "",
-          systemPrompt: buildAgentPrompt(),
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: systemPrompt,
+            },
+            firstMessage: firstMessage,
+            language: selectedLanguage,
+          },
         },
         onConnect: () => {
           console.log("Discussion agent connected");
@@ -219,15 +223,6 @@ Rules:
           }
         },
       };
-
-      // Add language override if not English
-      if (selectedLanguage !== "en") {
-        sessionConfig.overrides = {
-          agent: {
-            language: selectedLanguage,
-          },
-        };
-      }
 
       const conversation = await Conversation.startSession(sessionConfig);
       conversationRef.current = conversation;
