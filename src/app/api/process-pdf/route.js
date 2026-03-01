@@ -47,10 +47,17 @@ export async function POST(request) {
     const pythonScript = path.join(process.cwd(), 'src', 'testPy', 'plumb.py');
     const finalTopicGenScript = path.join(process.cwd(), 'src', 'testPy', 'out', 'FinalTopicGen.py');
     const outputDir = path.join(process.cwd(), 'src', 'testPy', 'out');
-    const venvPython = path.join(process.cwd(), 'venv', 'bin', 'python3');
-    
-    // Check if venv python exists, otherwise use system python3
-    const pythonCmd = existsSync(venvPython) ? venvPython : 'python3';
+// --- choose python interpreter (prefer venv) ---
+const venvPython =
+  process.platform === 'win32'
+    ? path.join(process.cwd(), 'venv', 'Scripts', 'python.exe')   // Windows
+    : path.join(process.cwd(), 'venv', 'bin', 'python3');         // mac/linux
+
+// fallback to system python if venv not found
+const pythonCmd =
+  existsSync(venvPython)
+    ? venvPython
+    : (process.platform === 'win32' ? 'python' : 'python3');
     
     // Ensure output directory exists
     await mkdir(outputDir, { recursive: true });

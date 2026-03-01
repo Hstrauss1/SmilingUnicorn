@@ -60,6 +60,10 @@ function DiscussionContent() {
   useEffect(() => {
     return () => {
       if (conversationRef.current) {
+        // Clear volume check interval
+        if (conversationRef.current._volumeCheckInterval) {
+          clearInterval(conversationRef.current._volumeCheckInterval);
+        }
         conversationRef.current.endSession();
       }
       if (timerRef.current) {
@@ -113,6 +117,10 @@ function DiscussionContent() {
 
   const handleSessionEnd = async () => {
     if (conversationRef.current) {
+      // Clear volume check interval
+      if (conversationRef.current._volumeCheckInterval) {
+        clearInterval(conversationRef.current._volumeCheckInterval);
+      }
       await conversationRef.current.endSession();
       conversationRef.current = null;
     }
@@ -127,6 +135,10 @@ function DiscussionContent() {
   const handleQuit = async () => {
     // Stop the agent first
     if (conversationRef.current) {
+      // Clear volume check interval
+      if (conversationRef.current._volumeCheckInterval) {
+        clearInterval(conversationRef.current._volumeCheckInterval);
+      }
       await conversationRef.current.endSession();
       conversationRef.current = null;
     }
@@ -165,8 +177,14 @@ Rules:
     try {
       const { Conversation } = await import("@elevenlabs/client");
 
-      // Request microphone permission
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Check for microphone permission first (but don't hold the stream)
+      try {
+        const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Immediately release the test stream so SDK can acquire it
+        testStream.getTracks().forEach(track => track.stop());
+      } catch (permErr) {
+        throw new Error("Microphone access denied. Please allow microphone access and try again.");
+      }
 
       const languageName = SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English";
       const systemPrompt = buildAgentPrompt();
@@ -199,7 +217,7 @@ Rules:
         },
         onError: (err) => {
           console.error("Discussion agent error:", err);
-          const errorMsg = err.message || "Connection failed";
+          const errorMsg = typeof err === 'string' ? err : (err?.message || "Connection failed");
           if (errorMsg.includes("language") || selectedLanguage !== "en") {
             setError(`${errorMsg}. Make sure "${languageName}" is enabled in your ElevenLabs agent settings.`);
           } else {
@@ -209,12 +227,36 @@ Rules:
           setIsConnecting(false);
         },
         onModeChange: (mode) => {
+          console.log("Mode changed:", mode.mode);
           setIsSpeaking(mode.mode === "speaking");
         },
       };
 
+      console.log("Starting ElevenLabs session with config:", { agentId: sessionConfig.agentId, language: selectedLanguage });
       const conversation = await Conversation.startSession(sessionConfig);
       conversationRef.current = conversation;
+      
+      // Ensure microphone is not muted
+      if (conversation.setMicMuted) {
+        conversation.setMicMuted(false);
+        console.log("Microphone unmuted");
+      }
+      
+      // Debug: Log input volume periodically
+      const volumeCheckInterval = setInterval(() => {
+        if (conversationRef.current && conversationRef.current.getInputVolume) {
+          const inputVolume = conversationRef.current.getInputVolume();
+          console.log("Input volume:", inputVolume);
+          if (inputVolume === 0) {
+            console.warn("No audio input detected - check microphone");
+          }
+        }
+      }, 2000);
+      
+      // Store interval for cleanup
+      conversation._volumeCheckInterval = volumeCheckInterval;
+      
+      console.log("Session started, conversation ID:", conversation.getId?.());
     } catch (err) {
       console.error("Failed to start discussion:", err);
       setError(err.message || "Failed to start discussion. Please check microphone permissions.");
