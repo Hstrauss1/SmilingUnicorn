@@ -1,8 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf9f6;
+  --foreground: #2d2d2d;
+  
+  /* Pastel color palette inspired by Anthropic */
+  --pastel-cream: #faf9f6;
+  --pastel-beige: #f4f1e8;
+  --pastel-sand: #e8e3d3;
+  --pastel-peach: #f5d5cb;
+  --pastel-coral: #e8b4a0;
+  --pastel-sage: #d4e5d4;
+  --pastel-mint: #c8e6d0;
+  --pastel-sky: #d4e8f0;
+  --pastel-lavender: #e6dff0;
+  --pastel-mauve: #d4c4dc;
+  
+  /* Text colors */
+  --text-primary: #2d2d2d;
+  --text-secondary: #5a5a5a;
+  --text-muted: #8a8a8a;
+  
+  /* Accent colors */
+  --accent-primary: #c09080;
+  --accent-hover: #b08070;
 }
 
 @theme inline {
@@ -14,8 +35,27 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1a1a1a;
+    --foreground: #e8e3d3;
+    
+    /* Dark mode pastels - muted versions */
+    --pastel-cream: #2d2d2d;
+    --pastel-beige: #3a3a3a;
+    --pastel-sand: #4a4a4a;
+    --pastel-peach: #5a4a45;
+    --pastel-coral: #6a5550;
+    --pastel-sage: #4a5a4a;
+    --pastel-mint: #455a50;
+    --pastel-sky: #455560;
+    --pastel-lavender: #524a5a;
+    --pastel-mauve: #5a4a60;
+    
+    --text-primary: #e8e3d3;
+    --text-secondary: #b8b3a3;
+    --text-muted: #888378;
+    
+    --accent-primary: #c09080;
+    --accent-hover: #d0a090;
   }
 }
 

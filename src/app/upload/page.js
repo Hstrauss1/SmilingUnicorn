@@ -113,16 +113,16 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
       <Header />
       
       <main className="pt-32 pb-20 px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
               Upload Your Document
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <p className="text-xl text-[#5a5a5a] dark:text-[#b8b3a3]">
               Upload any document and let AI create your personalized learning roadmap
             </p>
           </div>
@@ -155,8 +155,8 @@ export default function UploadPage() {
               onDrop={handleDrop}
               className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all ${
                 dragActive
-                  ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
-                  : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  ? "border-[#c09080] bg-[#f5d5cb] dark:bg-[#5a4a45]"
+                  : "border-[#e8e3d3] dark:border-[#4a4a4a] bg-[#faf9f6] dark:bg-[#2d2d2d]"
               }`}
             >
               <input
@@ -173,16 +173,16 @@ export default function UploadPage() {
                   <div className="text-4xl mb-4">📄</div>
                   <div className="text-left max-w-md mx-auto space-y-3">
                     {files.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                      <div key={index} className="flex items-center justify-between p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg border border-[#d4c4dc] dark:border-[#4a4a4a]">
                         <div className="overflow-hidden mr-4">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          <p className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3d3] truncate">
                             {file.name}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-[#5a5a5a] dark:text-[#b8b3a3]">
                             {(file.size / 1024 / 1024).toFixed(2)} MB
-                            {uploadProgress[file.name] === "uploading" && <span className="ml-2 text-blue-500">Uploading…</span>}
-                            {uploadProgress[file.name] === "done" && <span className="ml-2 text-green-500">✓ Uploaded</span>}
-                            {uploadProgress[file.name] === "error" && <span className="ml-2 text-red-500">✗ Failed</span>}
+                            {uploadProgress[file.name] === "uploading" && <span className="ml-2 text-[#c09080]">Uploading…</span>}
+                            {uploadProgress[file.name] === "done" && <span className="ml-2 text-green-600">✓ Uploaded</span>}
+                            {uploadProgress[file.name] === "error" && <span className="ml-2 text-red-600">✗ Failed</span>}
                           </p>
                         </div>
                         <button
@@ -201,7 +201,7 @@ export default function UploadPage() {
                   <div className="pt-4">
                     <label
                       htmlFor="file-upload"
-                      className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                      className="cursor-pointer text-sm text-[#c09080] hover:text-[#a87060] dark:hover:text-[#d4c4dc] font-semibold"
                     >
                       + Add more files
                     </label>
@@ -213,13 +213,13 @@ export default function UploadPage() {
                   <div>
                     <label
                       htmlFor="file-upload"
-                      className="cursor-pointer text-blue-600 hover:text-blue-700 font-semibold"
+                      className="cursor-pointer text-[#c09080] hover:text-[#a87060] dark:hover:text-[#d4c4dc] font-semibold"
                     >
                       Click to upload
                     </label>
-                    <span className="text-gray-600 dark:text-gray-400"> or drag and drop</span>
+                    <span className="text-[#5a5a5a] dark:text-[#b8b3a3]"> or drag and drop</span>
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3]">
                     PDF, DOC, DOCX, PPT, PPTX, or TXT (max 50MB)
                   </p>
                 </div>
@@ -227,32 +227,32 @@ export default function UploadPage() {
             </div>
 
             {/* Course Selection */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl p-8 border border-[#e8e3d3] dark:border-[#4a4a4a] shadow-sm">
+              <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-6">
                 Select a Course
               </h2>
               
               <div className="space-y-6">
                 {/* Custom Course Dropdown */}
                 <div ref={dropdownRef} className="relative w-full">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-[#2d2d2d] dark:text-[#b8b3a3] mb-2">
                     Which course are these files for?
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-left shadow-xs hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-[#f4f1e8] dark:bg-[#3a3a3a] border border-[#e8e3d3] dark:border-[#4a4a4a] rounded-xl text-left shadow-sm hover:bg-[#e8e3d3] dark:hover:bg-[#4a4a4a] transition-colors focus:outline-none focus:ring-2 focus:ring-[#c09080]"
                   >
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">
+                    <span className="block text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3d3]">
                       {selectedCourse}
                     </span>
-                    <svg className={`shrink-0 w-5 h-5 text-gray-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`shrink-0 w-5 h-5 text-[#5a5a5a] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 custom-scrollbar">
+                    <div className="absolute z-10 w-full mt-2 bg-[#faf9f6] dark:bg-[#2d2d2d] border border-[#e8e3d3] dark:border-[#4a4a4a] rounded-xl shadow-lg max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 custom-scrollbar">
                       {exampleCourses.map((course) => (
                         <button
                           key={course}
@@ -261,10 +261,10 @@ export default function UploadPage() {
                             setSelectedCourse(course);
                             setIsDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border-b last:border-0 border-gray-100 dark:border-gray-600/50 ${
+                          className={`w-full text-left px-4 py-3 hover:bg-[#f4f1e8] dark:hover:bg-[#3a3a3a] transition-colors border-b last:border-0 border-[#e8e3d3] dark:border-[#4a4a4a] ${
                             selectedCourse === course 
-                              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
-                              : 'text-gray-900 dark:text-white'
+                              ? 'bg-[#f5d5cb] dark:bg-[#5a4a45] text-[#c09080] dark:text-[#d4c4dc]' 
+                              : 'text-[#2d2d2d] dark:text-[#e8e3d3]'
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -272,7 +272,7 @@ export default function UploadPage() {
                               {course}
                             </span>
                             {selectedCourse === course && (
-                              <svg className="shrink-0 w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="shrink-0 w-4 h-4 text-[#c09080] dark:text-[#d4c4dc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                               </svg>
                             )}
@@ -291,8 +291,8 @@ export default function UploadPage() {
               disabled={files.length === 0 || uploading}
               className={`w-full py-4 rounded-full font-semibold text-lg transition-all ${
                 files.length === 0 || uploading
-                  ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                  : "bg-linear-to-r from-blue-600 to-purple-600 text-white hover:shadow-2xl hover:scale-105"
+                  ? "bg-[#e8e3d3] dark:bg-[#4a4a4a] text-[#8a8a8a] cursor-not-allowed"
+                  : "bg-gradient-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-2xl hover:scale-105"
               }`}
             >
               {uploading ? (

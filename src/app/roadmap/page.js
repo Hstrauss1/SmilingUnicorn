@@ -175,7 +175,7 @@ function RoadmapContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex flex-col bg-[#f4f1e8] dark:bg-[#3a3a3a]">
         <Header />
         <main className="grow flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -187,12 +187,12 @@ function RoadmapContent() {
 
   if (!coursePack) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex flex-col bg-[#f4f1e8] dark:bg-[#3a3a3a]">
         <Header />
         <main className="grow flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Roadmap Not Found</h2>
-            <p className="text-gray-600 dark:text-gray-400">We couldn&apos;t find the learning roadmap you&apos;re looking for.</p>
+            <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">Roadmap Not Found</h2>
+            <p className="text-[#5a5a5a] dark:text-[#b8b3a3]">We couldn&apos;t find the learning roadmap you&apos;re looking for.</p>
             <button 
               onClick={() => router.push('/dashboard')}
               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -207,7 +207,7 @@ function RoadmapContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col bg-[#f4f1e8] dark:bg-[#3a3a3a]">
       <Header />
       
       <main className="grow pt-24 pb-12">
@@ -221,10 +221,10 @@ function RoadmapContent() {
               >
                 <span>&larr;</span> Back to Dashboard
               </button>
-              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              <h1 className="text-3xl font-extrabold text-[#2d2d2d] dark:text-[#e8e3d3] tracking-tight">
                 Learning Roadmap
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+              <p className="text-lg text-[#5a5a5a] dark:text-[#b8b3a3] mt-2">
                 {coursePack.title}
               </p>
             </div>
@@ -232,7 +232,7 @@ function RoadmapContent() {
               <span className="block text-3xl font-bold text-blue-600 dark:text-blue-400">
                 {coursePack.progress}%
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mt-1">
+              <span className="text-xs text-[#8a8a8a] dark:text-[#888378] uppercase tracking-wider font-semibold mt-1">
                 Complete
               </span>
             </div>
@@ -248,30 +248,30 @@ function RoadmapContent() {
               // Topics should never be locked - all topics are accessible
               const isLocked = false;
               
-              let statusColor = "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600";
+              let statusColor = "bg-[#e8e3d3] dark:bg-[#4a4a4a] border-[#d4c4dc] dark:border-[#5a4a60]";
               let statusIcon = "�"; // Default icon for not started
               
               if (isCompleted) {
-                statusColor = "bg-green-100 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-400";
+                statusColor = "bg-[#d4e5d4] dark:bg-[#4a5a4a] border-[#c8e6d0] dark:border-[#5a6a60] text-[#4a5a4a] dark:text-[#c8e6d0]";
                 statusIcon = "✅";
               } else if (isInProgress) {
-                statusColor = "bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-400";
+                statusColor = "bg-[#d4e8f0] dark:bg-[#455560] border-[#c8e6d0] dark:border-[#5a6a70] text-[#455560] dark:text-[#d4e8f0]";
                 statusIcon = "▶️";
               }
 
               return (
                 <div key={topic.id} className="relative flex items-start mb-8 md:ml-0">
                   {/* Timeline Dot */}
-                  <div className={`hidden md:flex absolute left-4 w-9 h-9 -ml-4 rounded-full border-4 ${isCompleted ? 'border-green-500 bg-white dark:bg-gray-900' : isInProgress ? 'border-blue-500 bg-white dark:bg-gray-900' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'} z-10 items-center justify-center`}>
+                  <div className={`hidden md:flex absolute left-4 w-9 h-9 -ml-4 rounded-full border-4 ${isCompleted ? 'border-[#c8e6d0] bg-[#faf9f6] dark:bg-[#2d2d2d]' : isInProgress ? 'border-[#d4c4dc] bg-[#faf9f6] dark:bg-[#2d2d2d]' : 'border-[#e8e3d3] dark:border-[#4a4a4a] bg-[#faf9f6] dark:bg-[#2d2d2d]'} z-10 items-center justify-center`}>
                     <span className="text-sm">{isCompleted ? '✓' : index + 1}</span>
                   </div>
 
-                  <div className={`w-full md:ml-12 p-6 rounded-2xl border-2 transition-all ${isCompleted ? 'border-green-200 dark:border-green-900/50 bg-white dark:bg-gray-800' : isInProgress ? 'border-blue-400 dark:border-blue-600 bg-white dark:bg-gray-800 shadow-md transform scale-[1.02]' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-80'}`}>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-4 mb-4">
+                  <div className={`w-full md:ml-12 p-6 rounded-2xl border-2 transition-all ${isCompleted ? 'border-[#d4e5d4] dark:border-[#4a5a4a] bg-[#faf9f6] dark:bg-[#2d2d2d]' : isInProgress ? 'border-[#d4c4dc] dark:border-[#5a4a60] bg-[#faf9f6] dark:bg-[#2d2d2d] shadow-md transform scale-[1.02]' : 'border-[#e8e3d3] dark:border-[#4a4a4a] bg-[#f4f1e8] dark:bg-[#3a3a3a] opacity-80'}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e8e3d3] dark:border-[#4a4a4a] pb-4 mb-4">
                       <div className="flex items-center gap-3">
                         <span className="text-2xl" aria-hidden="true">{statusIcon}</span>
                         <div>
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                          <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3]">
                             Topic {index + 1}: {topic.title}
                           </h3>
                           <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -287,8 +287,8 @@ function RoadmapContent() {
                         onClick={() => router.push(`/topic/${topic.id}?packId=${packId}`)}
                         className={`px-6 py-2 rounded-xl font-semibold transition-colors ${
                           isCompleted 
-                            ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' 
-                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                            ? 'bg-[#e8e3d3] dark:bg-[#4a4a4a] text-[#5a5a5a] dark:text-[#b8b3a3] hover:bg-[#f4f1e8] dark:hover:bg-[#5a5a5a]' 
+                            : 'bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-lg shadow-sm'
                         }`}
                       >
                         {isCompleted ? 'Review' : topic.state === 'diagnostic' ? 'Start Diagnostic' : 'Continue'}
@@ -306,10 +306,10 @@ function RoadmapContent() {
                              else if (skill.mastery >= 0.5) barColor = 'bg-yellow-500';
                              
                              return (
-                              <div key={sIdx} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-100 dark:border-gray-800">
+                              <div key={sIdx} className="bg-[#f4f1e8] dark:bg-[#3a3a3a] rounded-lg p-3 border border-gray-100 dark:border-gray-800">
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{skill.name}</span>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">{masteryPercent}%</span>
+                                  <span className="text-xs text-[#8a8a8a] dark:text-[#888378]">{masteryPercent}%</span>
                                 </div>
                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                                   <div 
@@ -323,7 +323,7 @@ function RoadmapContent() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-2">
+                      <p className="text-sm text-[#8a8a8a] dark:text-[#888378] italic mt-2">
                         Subskills will be revealed after taking the diagnostic assessment.
                       </p>
                     )}

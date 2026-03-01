@@ -310,17 +310,17 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
       <Header />
       
       <main className="pt-32 pb-20 px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-4xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
               My Learning Dashboard
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">
+            <p className="text-[#5a5a5a] dark:text-[#b8b3a3]">
               Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0]}! Continue your learning journey.
             </p>
           </div>
@@ -371,30 +371,30 @@ export default function DashboardPage() {
           {/* Course Pack Selector (if multiple packs) */}
           {coursePacks.length > 1 && (
             <div className="mb-6 relative w-full md:w-96" ref={dropdownRef}>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-[#2d2d2d] dark:text-[#b8b3a3] mb-2">
                 Select Learning Roadmap
               </label>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-left shadow-xs hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-[#faf9f6] dark:bg-[#2d2d2d] border border-[#e8e3d3] dark:border-[#4a4a4a] rounded-xl text-left shadow-sm hover:bg-[#f4f1e8] dark:hover:bg-[#3a3a3a] transition-colors focus:outline-none focus:ring-2 focus:ring-[#c09080]"
                 >
                   <div>
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">
+                    <span className="block text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3d3]">
                       {selectedPack?.title}
                     </span>
-                    <span className="block text-xs text-gray-500 dark:text-gray-400">
+                    <span className="block text-xs text-[#5a5a5a] dark:text-[#b8b3a3]">
                       {selectedPack?.progress}% complete
                     </span>
                   </div>
-                  <svg className={`shrink-0 w-5 h-5 text-gray-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`shrink-0 w-5 h-5 text-[#5a5a5a] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute z-10 w-full mt-2 bg-[#faf9f6] dark:bg-[#2d2d2d] border border-[#e8e3d3] dark:border-[#4a4a4a] rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     {coursePacks.map((pack) => (
                       <button
                         key={pack.id}
@@ -402,30 +402,30 @@ export default function DashboardPage() {
                           setSelectedPack(pack);
                           setIsDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b last:border-0 border-gray-100 dark:border-gray-700/50 ${
-                          selectedPack?.id === pack.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                        className={`w-full text-left px-4 py-3 hover:bg-[#f4f1e8] dark:hover:bg-[#3a3a3a] transition-colors border-b last:border-0 border-[#e8e3d3] dark:border-[#4a4a4a] ${
+                          selectedPack?.id === pack.id ? 'bg-[#f5d5cb] dark:bg-[#5a4a45]' : ''
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className={`block text-sm font-semibold ${
-                            selectedPack?.id === pack.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
+                            selectedPack?.id === pack.id ? 'text-[#c09080] dark:text-[#d4c4dc]' : 'text-[#2d2d2d] dark:text-[#e8e3d3]'
                           }`}>
                             {pack.title}
                           </span>
                           {selectedPack?.id === pack.id && (
-                            <svg className="shrink-0 w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="shrink-0 w-4 h-4 text-[#c09080] dark:text-[#d4c4dc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                             </svg>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="flex-1 h-1.5 bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-linear-to-r from-blue-600 to-purple-600 rounded-full" 
+                              className="h-full bg-gradient-to-r from-[#c09080] to-[#d4c4dc] rounded-full" 
                               style={{ width: `${pack.progress}%` }}
                             />
                           </div>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right">
+                          <span className="text-xs text-[#5a5a5a] dark:text-[#b8b3a3] w-8 text-right">
                             {pack.progress}%
                           </span>
                         </div>
@@ -441,20 +441,20 @@ export default function DashboardPage() {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Roadmap Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] overflow-hidden shadow-sm">
+                <div className="p-6 border-b border-[#e8e3d3] dark:border-[#4a4a4a]">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3]">
                         {selectedPack.title}
                       </h2>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3]">
                         📄 {selectedPack.document_name}
                       </p>
                     </div>
                     <Link
                       href="/upload"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      className="px-4 py-2 bg-gradient-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
                     >
                       + New Roadmap
                     </Link>
@@ -463,14 +463,14 @@ export default function DashboardPage() {
                   {/* Overall Progress */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700 dark:text-gray-300">Overall Progress</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="text-[#5a5a5a] dark:text-[#b8b3a3]">Overall Progress</span>
+                      <span className="font-semibold text-[#2d2d2d] dark:text-[#e8e3d3]">
                         {selectedPack.progress}%
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                    <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-3">
                       <div
-                        className="bg-linear-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all"
+                        className="bg-gradient-to-r from-[#c09080] to-[#d4c4dc] h-3 rounded-full transition-all"
                         style={{ width: `${selectedPack.progress}%` }}
                       />
                     </div>
@@ -479,7 +479,7 @@ export default function DashboardPage() {
 
                 {/* Topic Sessions List */}
                 <div className="p-6 space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  <h3 className="text-lg font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
                     Learning Topics
                   </h3>
                   {selectedPack.topic_sessions && selectedPack.topic_sessions.length > 0 ? (
@@ -565,27 +565,27 @@ export default function DashboardPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Recent Activity */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl p-6 border border-[#e8e3d3] dark:border-[#4a4a4a] shadow-sm">
+                <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
                   Recent Activity
                 </h3>
                 <div className="space-y-4">
                   {recentActivity && recentActivity.length > 0 ? (
                     recentActivity.map((activity, index) => (
                       <div key={index} className="flex gap-3">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 shrink-0" />
+                        <div className="w-2 h-2 bg-[#c09080] rounded-full mt-2 shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm text-gray-900 dark:text-white">
+                          <p className="text-sm text-[#2d2d2d] dark:text-[#e8e3d3]">
                             <span className="font-semibold">{activity.action}</span> {activity.item}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <p className="text-xs text-[#5a5a5a] dark:text-[#b8b3a3] mt-1">
                             {getTimeAgo(activity.created_at)}
                           </p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                    <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] text-center py-4">
                       No recent activity
                     </p>
                   )}
@@ -593,35 +593,35 @@ export default function DashboardPage() {
               </div>
 
               {/* Quick Actions */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl p-6 border border-[#e8e3d3] dark:border-[#4a4a4a] shadow-sm">
+                <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
                   Quick Actions
                 </h3>
                 <div className="space-y-3">
                   <Link
                     href="/upload"
-                    className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    className="flex items-center gap-3 p-3 bg-[#f5d5cb] dark:bg-[#5a4a45] rounded-lg hover:bg-[#f0c7b8] dark:hover:bg-[#6a5a55] transition-colors"
                   >
                     <span className="text-2xl">📤</span>
-                    <span className="font-medium text-gray-900 dark:text-white text-sm">Upload New Document</span>
+                    <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">Upload New Document</span>
                   </Link>
-                  <button className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900/30 transition-colors">
+                  <button className="w-full flex items-center gap-3 p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] transition-colors">
                     <span className="text-2xl">📊</span>
-                    <span className="font-medium text-gray-900 dark:text-white text-sm">View Analytics</span>
+                    <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">View Analytics</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900/30 transition-colors">
+                  <button className="w-full flex items-center gap-3 p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] transition-colors">
                     <span className="text-2xl">⚙️</span>
-                    <span className="font-medium text-gray-900 dark:text-white text-sm">Settings</span>
+                    <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">Settings</span>
                   </button>
                 </div>
               </div>
 
               {/* Learning Tip */}
-              <div className="bg-linear-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              <div className="bg-gradient-to-br from-[#f5d5cb] to-[#e8d5e8] dark:from-[#5a4a45] dark:to-[#5a4a60] rounded-2xl p-6 border border-[#d4c4dc] dark:border-[#6a5a70] shadow-sm">
+                <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
                   💡 Learning Tip
                 </h3>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
+                <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3]">
                   Accessible education means learning at your own pace. Take diagnostic quizzes to identify gaps, then focus on targeted learning modules. Everyone&apos;s journey is unique!
                 </p>
               </div>

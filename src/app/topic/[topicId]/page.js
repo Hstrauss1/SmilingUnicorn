@@ -154,10 +154,10 @@ function TopicSessionContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
         <Header />
         <main className="grow flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#c09080]"></div>
         </main>
         <Footer />
       </div>
@@ -166,28 +166,28 @@ function TopicSessionContent() {
 
   if (!topicData) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
         <Header />
         <main className="grow flex items-center justify-center">
           <div className="max-w-md mx-auto px-4 text-center">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+            <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8">
               <div className="text-6xl mb-4">❌</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+              <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-3">
                 Topic Not Found
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-[#5a5a5a] dark:text-[#b8b3a3] mb-6">
                 We couldn&apos;t find the topic session data for this topic. The content may not have been generated yet.
               </p>
               <div className="space-y-3">
                 <button 
                   onClick={() => router.push('/dashboard')}
-                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                  className="w-full px-6 py-3 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg font-semibold transition-all"
                 >
                   Return to Dashboard
                 </button>
                 <button 
                   onClick={() => router.push(`/roadmap?packId=${packId}`)}
-                  className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold transition-colors"
+                  className="w-full px-6 py-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] text-[#2d2d2d] dark:text-[#e8e3d3] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] font-semibold transition-colors"
                 >
                   Back to Roadmap
                 </button>
@@ -209,28 +209,28 @@ function TopicSessionContent() {
     // If no questions available, show error
     if (questions.length === 0) {
       return (
-        <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
           <Header />
           <main className="grow flex items-center justify-center">
             <div className="max-w-md mx-auto px-4 text-center">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+              <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8">
                 <div className="text-6xl mb-4">📝</div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-3">
                   {currentView === 'diagnostic' ? 'Diagnostic Quiz' : 'Final Quiz'} Not Available
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-[#5a5a5a] dark:text-[#b8b3a3] mb-6">
                   The {currentView === 'diagnostic' ? 'diagnostic' : 'final'} quiz questions haven&apos;t been generated yet for this topic. Please check back later or contact support.
                 </p>
                 <div className="space-y-3">
                   <button 
                     onClick={() => router.push('/dashboard')}
-                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                    className="w-full px-6 py-3 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg font-semibold transition-all"
                   >
                     Return to Dashboard
                   </button>
                   <button 
                     onClick={() => router.push(`/roadmap?packId=${packId}`)}
-                    className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold transition-colors"
+                    className="w-full px-6 py-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] text-[#2d2d2d] dark:text-[#e8e3d3] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] font-semibold transition-colors"
                   >
                     Back to Roadmap
                   </button>
@@ -247,39 +247,39 @@ function TopicSessionContent() {
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
         <Header />
         
         <main className="grow pt-24 pb-12">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <button 
               onClick={() => router.push(`/roadmap?packId=${packId}`)}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 flex items-center gap-1"
+              className="text-sm text-[#c09080] dark:text-[#d4c4dc] hover:underline mb-4 flex items-center gap-1"
             >
               <span>&larr;</span> Back to Roadmap
             </button>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+            <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8 shadow-lg">
               <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h1 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
                   {currentView === 'diagnostic' ? '📝 Diagnostic Quiz' : '🎯 Final Quiz'}
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">{topicData.title}</p>
+                <p className="text-[#5a5a5a] dark:text-[#b8b3a3]">{topicData.title}</p>
               </div>
 
               {/* Progress Bar */}
               <div className="mb-8">
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-gray-700 dark:text-gray-300">
+                  <span className="text-[#5a5a5a] dark:text-[#b8b3a3]">
                     Question {currentQuestionIndex + 1} of {questions.length}
                   </span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
+                  <span className="font-semibold text-[#2d2d2d] dark:text-[#e8e3d3]">
                     {Math.round(progress)}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-linear-to-r from-[#c09080] to-[#d4c4dc] h-2 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -287,7 +287,7 @@ function TopicSessionContent() {
 
               {/* Question */}
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-xl font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-6">
                   {currentQuestion.prompt}
                 </h2>
 
@@ -298,15 +298,15 @@ function TopicSessionContent() {
                       onClick={() => handleAnswerSelect(currentQuestion.question_id, choice)}
                       className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
                         answers[currentQuestion.question_id] === choice
-                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          ? 'border-[#c09080] bg-[#f5d5cb] dark:bg-[#5a4a45]'
+                          : 'border-[#e8e3d3] dark:border-[#4a4a4a] hover:border-[#d4c4dc] dark:hover:border-[#5a4a60]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                           answers[currentQuestion.question_id] === choice
-                            ? 'border-blue-600 bg-blue-600'
-                            : 'border-gray-300 dark:border-gray-600'
+                            ? 'border-[#c09080] bg-[#c09080]'
+                            : 'border-[#8a8a8a] dark:border-[#888378]'
                         }`}>
                           {answers[currentQuestion.question_id] === choice && (
                             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -314,7 +314,7 @@ function TopicSessionContent() {
                             </svg>
                           )}
                         </div>
-                        <span className="text-gray-900 dark:text-white">{choice}</span>
+                        <span className="text-[#2d2d2d] dark:text-[#e8e3d3]">{choice}</span>
                       </div>
                     </button>
                   ))}
@@ -326,7 +326,7 @@ function TopicSessionContent() {
                 <button
                   onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
                   disabled={currentQuestionIndex === 0}
-                  className="px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className="px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[#e8e3d3] dark:bg-[#4a4a4a] text-[#2d2d2d] dark:text-[#e8e3d3] hover:bg-[#f4f1e8] dark:hover:bg-[#5a5a5a]"
                 >
                   Previous
                 </button>
@@ -335,14 +335,14 @@ function TopicSessionContent() {
                   <button
                     onClick={handleSubmitQuiz}
                     disabled={Object.keys(answers).length !== questions.length}
-                    className="px-8 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                    className="px-8 py-3 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-lg"
                   >
                     Submit Quiz
                   </button>
                 ) : (
                   <button
                     onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-                    className="px-6 py-2 rounded-lg font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
+                    className="px-6 py-2 rounded-lg font-medium transition-all bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-lg"
                   >
                     Next
                   </button>
@@ -364,27 +364,27 @@ function TopicSessionContent() {
       : topicData.final_quiz?.questions || [];
 
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
         <Header />
         
         <main className="grow pt-24 pb-12">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+            <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8 shadow-lg">
               <div className="text-center mb-8">
                 <div className="text-6xl mb-4">
                   {quizScore.percent >= 80 ? '🎉' : quizScore.percent >= 60 ? '👍' : '📚'}
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                <h1 className="text-3xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
                   Quiz Complete!
                 </h1>
-                <p className="text-xl text-gray-600 dark:text-gray-400">
+                <p className="text-xl text-[#5a5a5a] dark:text-[#b8b3a3]">
                   You scored {quizScore.num_correct} out of {quizScore.num_total} ({Math.round(quizScore.percent)}%)
                 </p>
               </div>
 
               {/* Results Summary */}
               <div className="mb-8 space-y-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Review Your Answers</h2>
+                <h2 className="text-lg font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">Review Your Answers</h2>
                 {questions.map((q, index) => {
                   const userAnswer = answers[q.question_id];
                   const isCorrect = userAnswer === q.correct_answer;
@@ -392,21 +392,21 @@ function TopicSessionContent() {
                   return (
                     <div key={q.question_id} className={`p-4 rounded-xl border-2 ${
                       isCorrect 
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
-                        : 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        ? 'border-[#d4e5d4] bg-[#d4e5d4] dark:bg-[#4a5a4a]' 
+                        : 'border-[#f5d5cb] bg-[#f5d5cb] dark:bg-[#5a4a45]'
                     }`}>
                       <div className="flex items-start gap-3">
                         <span className="text-2xl">{isCorrect ? '✅' : '❌'}</span>
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900 dark:text-white mb-2">
+                          <p className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
                             Q{index + 1}: {q.prompt}
                           </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Your answer: <span className={isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>{userAnswer}</span>
+                          <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3]">
+                            Your answer: <span className={isCorrect ? 'text-[#4a5a4a] dark:text-[#c8e6d0] font-semibold' : 'text-[#5a4a45] dark:text-[#e8b4a0] font-semibold'}>{userAnswer}</span>
                           </p>
                           {!isCorrect && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              Correct answer: <span className="text-green-700 dark:text-green-400">{q.correct_answer}</span>
+                            <p className="text-sm text-[#5a5a5a] dark:text-[#b8b3a3] mt-1">
+                              Correct answer: <span className="text-[#4a5a4a] dark:text-[#c8e6d0] font-semibold">{q.correct_answer}</span>
                             </p>
                           )}
                         </div>
@@ -418,7 +418,7 @@ function TopicSessionContent() {
 
               <button
                 onClick={handleContinueAfterQuiz}
-                className="w-full px-8 py-4 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700 shadow-sm text-lg"
+                className="w-full px-8 py-4 rounded-lg font-semibold transition-all bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-lg text-lg"
               >
                 {currentView === 'diagnostic' 
                   ? (topicData?.learning_session?.active_modules?.length > 0 
@@ -442,28 +442,28 @@ function TopicSessionContent() {
     // If no modules, show error with option to skip to final quiz
     if (activeModules.length === 0) {
       return (
-        <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
           <Header />
           <main className="grow flex items-center justify-center">
             <div className="max-w-md mx-auto px-4 text-center">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+              <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8">
                 <div className="text-6xl mb-4">📚</div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                <h2 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-3">
                   Learning Modules Not Available
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-[#5a5a5a] dark:text-[#b8b3a3] mb-6">
                   No learning modules have been generated for this topic yet. You can skip to the final quiz or return to the dashboard.
                 </p>
                 <div className="space-y-3">
                   <button 
                     onClick={() => setCurrentView('final_quiz')}
-                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                    className="w-full px-6 py-3 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg font-semibold transition-all"
                   >
                     Skip to Final Quiz
                   </button>
                   <button 
                     onClick={() => router.push('/dashboard')}
-                    className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold transition-colors"
+                    className="w-full px-6 py-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] text-[#2d2d2d] dark:text-[#e8e3d3] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] font-semibold transition-colors"
                   >
                     Return to Dashboard
                   </button>
@@ -480,39 +480,39 @@ function TopicSessionContent() {
     const progress = ((currentModuleIndex + 1) / activeModules.length) * 100;
 
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex flex-col bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
         <Header />
         
         <main className="grow pt-24 pb-12">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <button 
               onClick={() => router.push(`/roadmap?packId=${packId}`)}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 flex items-center gap-1"
+              className="text-sm text-[#c09080] dark:text-[#d4c4dc] hover:underline mb-4 flex items-center gap-1"
             >
               <span>&larr;</span> Back to Roadmap
             </button>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+            <div className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-2xl border border-[#e8e3d3] dark:border-[#4a4a4a] p-8 shadow-lg">
               <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h1 className="text-2xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
                   🔄 Learning Module
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">{topicData.title}</p>
+                <p className="text-[#5a5a5a] dark:text-[#b8b3a3]">{topicData.title}</p>
               </div>
 
               {/* Progress Bar */}
               <div className="mb-8">
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-gray-700 dark:text-gray-300">
+                  <span className="text-[#5a5a5a] dark:text-[#b8b3a3]">
                     Module {currentModuleIndex + 1} of {activeModules.length}
                   </span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
+                  <span className="font-semibold text-[#2d2d2d] dark:text-[#e8e3d3]">
                     {Math.round(progress)}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-2">
                   <div
-                    className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-linear-to-r from-[#d4c4dc] to-[#e6dff0] h-2 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -520,27 +520,27 @@ function TopicSessionContent() {
 
               {/* Module Content */}
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                <h2 className="text-xl font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
                   {currentModule.title}
                 </h2>
                 
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 mb-6 border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                <div className="bg-[#d4e8f0] dark:bg-[#455560] rounded-xl p-6 mb-6 border border-[#c8e6d0] dark:border-[#5a6a70]">
+                  <h3 className="text-lg font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-3">
                     📖 Explanation
                   </h3>
-                  <p className="text-gray-700 dark:text-gray-300">
+                  <p className="text-[#5a5a5a] dark:text-[#b8b3a3]">
                     {currentModule.explanation}
                   </p>
                 </div>
 
                 {currentModule.evidence_chunk_ids && currentModule.evidence_chunk_ids.length > 0 && (
-                  <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  <div className="bg-[#f4f1e8] dark:bg-[#3a3a3a] rounded-xl p-6 border border-[#e8e3d3] dark:border-[#4a4a4a]">
+                    <h3 className="text-sm font-semibold text-[#5a5a5a] dark:text-[#b8b3a3] mb-3">
                       📚 Reference Materials
                     </h3>
                     <ul className="space-y-2">
                       {currentModule.evidence_chunk_ids.map((chunkId, idx) => (
-                        <li key={idx} className="text-sm text-gray-600 dark:text-gray-400">
+                        <li key={idx} className="text-sm text-[#5a5a5a] dark:text-[#888378]">
                           • {chunkId.split('__').pop()}
                         </li>
                       ))}
@@ -551,7 +551,7 @@ function TopicSessionContent() {
 
               <button
                 onClick={handleNextModule}
-                className="w-full px-8 py-4 rounded-lg font-semibold transition-colors bg-purple-600 text-white hover:bg-purple-700 shadow-sm text-lg"
+                className="w-full px-8 py-4 rounded-lg font-semibold transition-all bg-linear-to-r from-[#d4c4dc] to-[#e6dff0] text-white hover:shadow-lg text-lg"
               >
                 {currentModuleIndex < activeModules.length - 1 
                   ? 'Next Module' 
@@ -572,8 +572,8 @@ function TopicSessionContent() {
 export default function TopicSessionPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#c09080]"></div>
       </div>
     }>
       <TopicSessionContent />
