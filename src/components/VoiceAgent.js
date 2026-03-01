@@ -46,9 +46,14 @@ export default function VoiceAgent({ agentId, topicContext }) {
       // Start the conversation session
       const conversation = await Conversation.startSession({
         agentId: agentId || process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID,
-        // Pass language and context to the agent
+        // Override agent settings to use selected language
+        overrides: {
+          agent: {
+            language: selectedLanguage,
+          },
+        },
+        // Pass context to the agent
         dynamicVariables: {
-          language: selectedLanguage,
           languageName: SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English",
           topicContext: topicContext || "general learning assistance",
         },
