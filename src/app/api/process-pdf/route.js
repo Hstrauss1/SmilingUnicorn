@@ -131,7 +131,7 @@ export async function POST(request) {
     let topicGenStdout, topicGenStderr;
     try {
       const topicGenResult = await execAsync(
-        `cd "${outputDir}" && "${pythonCmd}" FinalTopicGen.py "${chunksFile}" "${courseName}" "." --with-diagnostic`,
+        `cd "${outputDir}" && "${pythonCmd}" FinalTopicGen.py "${chunksFile}" "${courseName}" "."`,
         { maxBuffer: 10 * 1024 * 1024 }
       );
       topicGenStdout = topicGenResult.stdout;
