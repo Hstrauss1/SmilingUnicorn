@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getUserCoursePacks, getUserStats } from "@/lib/supabase/coursePacks";
+import { getUserCoursePacks, getUserStats, getUserCoursePacksFormatted } from "@/lib/supabase/coursePacks";
 import { loadGeneratedCoursePacks } from "@/lib/loadDiagnostics";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -94,26 +94,43 @@ export default function DashboardPage() {
       
       if (user) {
         try {
-          // Fetch real data from Supabase
-          const [packs, userStats, activity] = await Promise.all([
-            getUserCoursePacks(),
-            getUserStats(),
-          ]);
+          // First try to fetch from Supabase (formatted with roadmap_json)
+          console.log('Attempting to load course packs from Supabase...');
+          const formattedPacks = await getUserCoursePacksFormatted();
           
-          // If no data exists yet, use mock data
-          if (!packs || packs.length === 0) {
-            loadMockData();
+          if (formattedPacks && formattedPacks.length > 0) {
+            console.log(`Loaded ${formattedPacks.length} course packs from Supabase`);
+            
+            // Calculate stats from Supabase data
+            const totalTopics = formattedPacks.reduce((sum, pack) => sum + pack.topic_sessions.length, 0);
+            const completedTopics = formattedPacks.reduce((sum, pack) => 
+              sum + pack.topic_sessions.filter(t => t.completion_status === 'completed').length, 0
+            );
+            
+            const supabaseStats = {
+              totalCoursePacks: formattedPacks.length,
+              totalTopics: totalTopics,
+              completedTopics: completedTopics,
+              averageProgress: Math.round(formattedPacks.reduce((sum, pack) => sum + pack.progress, 0) / formattedPacks.length),
+              currentStreak: 0
+            };
+
+            setCoursePacks(formattedPacks);
+            setSelectedPack(formattedPacks[0]);
+            setStats(supabaseStats);
           } else {
-            setCoursePacks(packs);
-            setStats(userStats);
-            setSelectedPack(packs[0]);
+            // No Supabase data, fall back to generated files
+            console.log('No course packs in Supabase, loading from generated files...');
+            await loadMockData();
           }
         } catch (error) {
-          /****
-           * Remove this later! - Raph
-           */
-          loadMockData();
+          console.error('Error loading from Supabase, falling back to generated files:', error);
+          // Fallback to Python-generated files
+          await loadMockData();
         }
+      } else {
+        // Not logged in, show login prompt
+        console.log('User not authenticated');
       }
       
       setLoading(false);

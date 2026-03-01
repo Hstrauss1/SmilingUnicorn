@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.course_packs (
   document_name TEXT,
   document_url TEXT,
   learning_goal TEXT,
+  roadmap_json JSONB, -- Complete topic session JSON with subskills, diagnostic, learning modules, etc.
   status TEXT DEFAULT 'in_progress' CHECK (status IN ('not_started', 'in_progress', 'completed')),
   progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,

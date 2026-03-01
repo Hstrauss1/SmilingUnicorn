@@ -182,9 +182,6 @@ def build_topic_spaces(course_title: str, chunks: List[dict], chunk_map: Dict[st
     ]
     """
     chunks_sorted = sort_chunks(chunks)
-
-    print(f"[MAP] Processing batch {i // BATCH_SIZE_FOR_TOPIC_MAP + 1}")
-    print(f"  Batch size: {len(batch)}")
     # Build batches of lightweight items
     items = []
     for c in chunks_sorted:

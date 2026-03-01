@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/client";
 import { loadGeneratedCoursePacks } from "@/lib/loadDiagnostics";
+import { getUserCoursePacksFormatted } from "@/lib/supabase/coursePacks";
 
 function RoadmapContent() {
   const router = useRouter();
@@ -21,21 +22,45 @@ function RoadmapContent() {
       setLoading(true);
       
       try {
-        // Load all generated course packs from Python state machine
-        const generatedPacks = await loadGeneratedCoursePacks();
+        // First try to load from Supabase
+        console.log('Loading roadmap from Supabase for packId:', packId);
+        const supabasePacks = await getUserCoursePacksFormatted();
         
         // Find the course pack matching the packId
-        const pack = generatedPacks.find(p => p.id === packId);
+        let pack = supabasePacks.find(p => p.id === packId);
         
         if (pack) {
+          console.log('Found course pack in Supabase:', pack.title);
           setCoursePack(pack);
         } else {
-          console.error('Course pack not found:', packId);
-          setCoursePack(null);
+          // Fall back to generated files
+          console.log('Course pack not in Supabase, checking generated files...');
+          const generatedPacks = await loadGeneratedCoursePacks();
+          pack = generatedPacks.find(p => p.id === packId);
+          
+          if (pack) {
+            console.log('Found course pack in generated files:', pack.title);
+            setCoursePack(pack);
+          } else {
+            console.error('Course pack not found:', packId);
+            setCoursePack(null);
+          }
         }
       } catch (error) {
         console.error('Error loading course pack:', error);
-        setCoursePack(null);
+        // Try fallback to generated files
+        try {
+          const generatedPacks = await loadGeneratedCoursePacks();
+          const pack = generatedPacks.find(p => p.id === packId);
+          if (pack) {
+            setCoursePack(pack);
+          } else {
+            setCoursePack(null);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+          setCoursePack(null);
+        }
       } finally {
         setLoading(false);
       }

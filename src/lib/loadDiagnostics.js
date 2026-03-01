@@ -1,77 +1,92 @@
 /**
  * Utility functions to load Python-generated diagnostic quizzes
+ * Updated to fetch from Supabase instead of static files
  */
 
+import { createClient } from '@/lib/supabase/client';
+
 /**
- * Load all available course pack topic sessions from the out directory
- * This will attempt to load all course_*_topic_session_with_diagnostic.json files
+ * Load all available course pack topic sessions from Supabase for the current user
  */
 export async function loadGeneratedCoursePacks() {
+  const supabase = createClient();
+  
+  // Get current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !user) {
+    console.error('User not authenticated:', userError);
+    return [];
+  }
+  
+  // Fetch all course packs for this user
+  const { data: coursePacksData, error: fetchError } = await supabase
+    .from('course_packs')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+  
+  if (fetchError) {
+    console.error('Error fetching course packs:', fetchError);
+    return [];
+  }
+  
+  if (!coursePacksData || coursePacksData.length === 0) {
+    console.debug('No course packs found for user');
+    return [];
+  }
+  
   const coursePacks = [];
   
-  // List of known course IDs (you can expand this list as you generate more)
-  const knownCourseIds = [
-    'course_8deddc76',
-    'course_41297e14', 
-    'course_5890e04c',
-    'course_ee67b8ac'
-  ];
-  
-  for (const courseId of knownCourseIds) {
+  for (const packData of coursePacksData) {
     try {
-      // Try to load the diagnostic version first
-      let topicSession;
-      try {
-        const diagnosticModule = await import(`@/testPy/out/${courseId}_topic_session_with_diagnostic.json`);
-        topicSession = diagnosticModule.default;
-      } catch (e) {
-        // Fall back to the version without diagnostic
-        const normalModule = await import(`@/testPy/out/${courseId}_topic_session.json`);
-        topicSession = normalModule.default;
+      const roadmapJson = packData.roadmap_json;
+      
+      if (!roadmapJson || !roadmapJson.topic_session) {
+        console.debug(`Skipping ${packData.course_pack_id}: No topic session data`);
+        continue;
       }
       
-      if (topicSession && topicSession.topic_session) {
-        // Skip course packs with placeholder subskills (incomplete generation)
-        const hasPlaceholderSubskills = topicSession.topic_session.subskills.some(
-          skill => skill.subskill_id === 'subskill_placeholder' || 
-                   skill.name.includes('Placeholder')
-        );
-        
-        if (hasPlaceholderSubskills) {
-          console.debug(`Skipping ${courseId}: Has placeholder subskills (incomplete topic extraction)`);
-          continue;
-        }
-        
-        const topic = {
-          id: topicSession.topic_session.topic_id,
-          title: topicSession.topic_session.title,
-          state: topicSession.topic_session.state,
-          completion_status: "not_started",
-          subskills: topicSession.topic_session.subskills.map(skill => ({
-            id: skill.subskill_id,
-            name: skill.name,
-            mastery: skill.mastery
-          })),
-          diagnostic: topicSession.topic_session.diagnostic,
-          learning_session: topicSession.topic_session.learning_session,
-          final_quiz: topicSession.topic_session.final_quiz
-        };
-        
-        // Create a course pack for this topic
-        const coursePack = {
-          id: topicSession.course_pack_id,
-          title: topicSession.topic_session.title,
-          document_name: "Generated from PDF",
-          progress: 0,
-          status: 'in_progress',
-          topic_sessions: [topic]
-        };
-        
-        coursePacks.push(coursePack);
+      // Skip course packs with placeholder subskills (incomplete generation)
+      const hasPlaceholderSubskills = roadmapJson.topic_session.subskills.some(
+        skill => skill.subskill_id === 'subskill_placeholder' || 
+                 skill.name.includes('Placeholder') ||
+                 !skill.name || skill.name.trim() === ''
+      );
+      
+      if (hasPlaceholderSubskills) {
+        console.debug(`Skipping ${packData.course_pack_id}: Has placeholder subskills (incomplete topic extraction)`);
+        continue;
       }
+      
+      const topic = {
+        id: roadmapJson.topic_session.topic_id,
+        title: roadmapJson.topic_session.title,
+        state: roadmapJson.topic_session.state,
+        completion_status: roadmapJson.topic_session.completion?.status || "not_started",
+        subskills: roadmapJson.topic_session.subskills.map(skill => ({
+          id: skill.subskill_id,
+          name: skill.name,
+          mastery: skill.mastery
+        })),
+        diagnostic: roadmapJson.topic_session.diagnostic,
+        learning_session: roadmapJson.topic_session.learning_session,
+        final_quiz: roadmapJson.topic_session.final_quiz
+      };
+      
+      // Create a course pack for this topic
+      const coursePack = {
+        id: packData.course_pack_id,
+        title: packData.title,
+        document_name: packData.document_name || "Generated from PDF",
+        progress: packData.progress || 0,
+        status: packData.status || 'in_progress',
+        topic_sessions: [topic]
+      };
+      
+      coursePacks.push(coursePack);
     } catch (error) {
-      // Course pack doesn't exist or can't be loaded, skip it
-      console.debug(`Could not load course pack ${courseId}:`, error.message);
+      console.error(`Error processing course pack ${packData.course_pack_id}:`, error);
     }
   }
   
@@ -79,28 +94,34 @@ export async function loadGeneratedCoursePacks() {
 }
 
 /**
- * Load a specific topic session by ID
+ * Load a specific topic session by ID from Supabase
  */
 export async function loadTopicSessionById(topicId, packId) {
+  const supabase = createClient();
+  
   try {
-    // Try different file naming patterns
-    const patterns = [
-      `@/testPy/out/topic_session_${topicId}.json`,
-      `@/testPy/out/course_${packId}_topic_session_with_diagnostic.json`,
-      `@/testPy/out/course_${packId}_topic_session.json`
-    ];
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    for (const pattern of patterns) {
-      try {
-        const topicModule = await import(pattern);
-        return topicModule.default.topic_session;
-      } catch (e) {
-        // Try next pattern
-        continue;
-      }
+    if (userError || !user) {
+      console.error('User not authenticated:', userError);
+      return null;
     }
     
-    return null;
+    // Fetch the course pack by course_pack_id
+    const { data: packData, error: fetchError } = await supabase
+      .from('course_packs')
+      .select('roadmap_json')
+      .eq('course_pack_id', packId)
+      .eq('user_id', user.id)
+      .single();
+    
+    if (fetchError || !packData) {
+      console.error('Error fetching topic session:', fetchError);
+      return null;
+    }
+    
+    return packData.roadmap_json?.topic_session || null;
   } catch (error) {
     console.error('Error loading topic session:', error);
     return null;
