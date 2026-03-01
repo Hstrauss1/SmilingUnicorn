@@ -22,6 +22,7 @@ function TopicSessionContent() {
   const [showResults, setShowResults] = useState(false);
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [quizScore, setQuizScore] = useState(null);
+  const [submittingQuiz, setSubmittingQuiz] = useState(false);
 
   useEffect(() => {
     const loadTopicData = async () => {
@@ -105,7 +106,7 @@ function TopicSessionContent() {
     });
   };
 
-  const handleSubmitQuiz = () => {
+  const handleSubmitQuiz = async () => {
     if (!topicData) return;
     
     const questions = currentView === 'diagnostic' 
@@ -114,21 +115,79 @@ function TopicSessionContent() {
     
     if (questions.length === 0) return;
     
-    let correctCount = 0;
-    questions.forEach(q => {
-      if (answers[q.question_id] === q.correct_answer) {
-        correctCount++;
+    // For diagnostic quiz, submit to API for grading and learning module generation
+    if (currentView === 'diagnostic') {
+      setSubmittingQuiz(true);
+      
+      try {
+        // Prepare answers in the format the API expects
+        const submittedAnswers = Object.entries(answers).map(([question_id, answer]) => ({
+          question_id,
+          answer
+        }));
+
+        console.log('Submitting diagnostic to API...', { packId, answers: submittedAnswers });
+        
+        // Call the submit-diagnostic API
+        const response = await fetch('/api/submit-diagnostic', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            coursePackId: packId,
+            answers: submittedAnswers
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to submit diagnostic: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('Diagnostic submission result:', result);
+
+        // Update local state with the score from the API
+        setQuizScore(result.score);
+        setShowResults(true);
+
+        // Reload the topic data to get updated mastery and learning modules
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data } = await supabase
+          .from('course_packs')
+          .select('course_packs')
+          .eq('user_id', user.id)
+          .single();
+        
+        const pack = data.course_packs.find(p => p.course_pack_id === packId);
+        if (pack?.topic_session) {
+          setTopicData(pack.topic_session);
+        }
+
+      } catch (error) {
+        console.error('Error submitting diagnostic:', error);
+        alert('Failed to submit diagnostic. Please try again.');
+      } finally {
+        setSubmittingQuiz(false);
       }
-    });
-    
-    const score = {
-      num_correct: correctCount,
-      num_total: questions.length,
-      percent: (correctCount / questions.length) * 100
-    };
-    
-    setQuizScore(score);
-    setShowResults(true);
+    } else {
+      // For final quiz, just calculate locally for now
+      let correctCount = 0;
+      questions.forEach(q => {
+        if (answers[q.question_id] === q.correct_answer) {
+          correctCount++;
+        }
+      });
+      
+      const score = {
+        num_correct: correctCount,
+        num_total: questions.length,
+        percent: (correctCount / questions.length) * 100
+      };
+      
+      setQuizScore(score);
+      setShowResults(true);
+    }
   };
 
   const handleContinueAfterQuiz = () => {
@@ -343,10 +402,17 @@ function TopicSessionContent() {
                 {currentQuestionIndex === questions.length - 1 ? (
                   <button
                     onClick={handleSubmitQuiz}
-                    disabled={Object.keys(answers).length !== questions.length}
-                    className="px-8 py-3 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-lg"
+                    disabled={Object.keys(answers).length !== questions.length || submittingQuiz}
+                    className="px-8 py-3 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white hover:shadow-lg flex items-center gap-2"
                   >
-                    Submit Quiz
+                    {submittingQuiz ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Grading...
+                      </>
+                    ) : (
+                      'Submit Quiz'
+                    )}
                   </button>
                 ) : (
                   <button
@@ -390,6 +456,64 @@ function TopicSessionContent() {
                   You scored {quizScore.num_correct} out of {quizScore.num_total} ({Math.round(quizScore.percent)}%)
                 </p>
               </div>
+
+              {/* Diagnostic-specific: Mastery Updates */}
+              {currentView === 'diagnostic' && topicData?.subskills && (
+                <div className="mb-8 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-xl p-6 border border-[#d4c4dc] dark:border-[#4a4a4a]">
+                  <h2 className="text-lg font-semibold text-[#2d2d2d] dark:text-[#e8e3d3] mb-4">
+                    📊 Skill Mastery Analysis
+                  </h2>
+                  <div className="space-y-3">
+                    {topicData.subskills.map((skill) => {
+                      const masteryPercent = Math.round((skill.mastery || 0) * 100);
+                      const isWeak = masteryPercent < 70;
+                      
+                      return (
+                        <div key={skill.subskill_id} className="bg-[#faf9f6] dark:bg-[#2d2d2d] rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3d3] flex items-center gap-2">
+                              {isWeak ? '⚠️' : '✓'} {skill.name}
+                            </span>
+                            <span className={`text-sm font-bold ${
+                              isWeak 
+                                ? 'text-[#c09080]' 
+                                : masteryPercent === 100 
+                                  ? 'text-green-600 dark:text-green-400' 
+                                  : 'text-blue-600 dark:text-blue-400'
+                            }`}>
+                              {masteryPercent}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all ${
+                                isWeak 
+                                  ? 'bg-[#c09080]' 
+                                  : masteryPercent === 100 
+                                    ? 'bg-green-500' 
+                                    : 'bg-blue-500'
+                              }`}
+                              style={{ width: `${Math.max(masteryPercent, 5)}%` }}
+                            />
+                          </div>
+                          {isWeak && (
+                            <p className="text-xs text-[#5a5a5a] dark:text-[#b8b3a3] mt-2">
+                              📚 Learning module available to strengthen this skill
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {topicData?.learning_session?.active_modules?.length > 0 && (
+                    <div className="mt-4 p-3 bg-[#f5d5cb] dark:bg-[#5a4a45] rounded-lg border border-[#d4c4dc] dark:border-[#6a5a70]">
+                      <p className="text-sm text-[#2d2d2d] dark:text-[#e8e3d3]">
+                        💡 <strong>{topicData.learning_session.active_modules.length} learning modules</strong> have been generated for your weak areas. Continue to review them!
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Results Summary */}
               <div className="mb-8 space-y-4">

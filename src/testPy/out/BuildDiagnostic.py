@@ -249,7 +249,7 @@ def build_diagnostic_quiz(topic_session_obj: dict, chunk_map: dict, questions_pe
     ts["topic_session"]["state"] = "diagnostic"
     return ts
 
-def build_diagnostic_quiz_per_subskill(topic_session_obj: dict, chunk_map: dict, questions_per_subskill: int = 1) -> dict:
+def build_diagnostic_quiz_per_subskill(topic_session_obj: dict, chunk_map: dict, questions_per_subskill: int = 4) -> dict:
     ts = ensure_schema_defaults(topic_session_obj)
     subskills = ts["topic_session"]["subskills"]
 
@@ -364,6 +364,107 @@ def build_diagnostic_quiz_per_subskill(topic_session_obj: dict, chunk_map: dict,
     }
 
     ts["topic_session"]["state"] = "diagnostic"
+    return ts
+
+# =========================
+# GRADING UTILITIES
+# =========================
+def grade_diagnostic_and_update_mastery(topic_session_obj: dict, submitted_answers: list) -> dict:
+    """
+    Grade diagnostic quiz and update subskill mastery based on performance
+    
+    Args:
+        topic_session_obj: The topic session with diagnostic questions
+        submitted_answers: List of {question_id, answer} dicts
+    
+    Returns:
+        Updated topic session with graded submission and updated mastery
+    """
+    ts = deepcopy(topic_session_obj)
+    
+    questions = ts["topic_session"]["diagnostic"]["questions"]
+    
+    # Create lookup maps
+    question_by_id = {q["question_id"]: q for q in questions}
+    answer_by_qid = {a["question_id"]: a["answer"] for a in submitted_answers}
+    
+    # Track results
+    per_question = []
+    num_correct = 0
+    weak_subskills_set = set()
+    
+    # Track per-subskill performance
+    subskill_correct = {}
+    subskill_total = {}
+    
+    # Grade each question
+    for q in questions:
+        qid = q["question_id"]
+        expected = q["correct_answer"]
+        given = answer_by_qid.get(qid, "")
+        subskill_id = q["subskill_id"]
+        
+        # Initialize counters
+        if subskill_id not in subskill_correct:
+            subskill_correct[subskill_id] = 0
+            subskill_total[subskill_id] = 0
+        
+        is_correct = (given.strip() == expected.strip())
+        
+        if is_correct:
+            num_correct += 1
+            subskill_correct[subskill_id] += 1
+        else:
+            weak_subskills_set.add(subskill_id)
+        
+        subskill_total[subskill_id] += 1
+        
+        per_question.append({
+            "question_id": qid,
+            "is_correct": is_correct,
+            "error_type": None if is_correct else "reasoning_error",
+            "confidence": 1.0 if is_correct else 0.6,
+            "notes": "Correct answer" if is_correct else "Incorrect answer"
+        })
+    
+    num_total = len(questions)
+    percent = num_correct / num_total if num_total else 0.0
+    
+    # Update submission
+    ts["topic_session"]["diagnostic"]["submission"] = {
+        "answers": submitted_answers,
+        "score": {
+            "num_correct": num_correct,
+            "num_total": num_total,
+            "percent": percent
+        },
+        "analysis": {
+            "per_question": per_question,
+            "weak_subskills": sorted(list(weak_subskills_set)),
+            "suspected_prereq_topics": []
+        }
+    }
+    
+    # Update mastery for each subskill
+    ts["topic_session"]["subskills"] = [
+        {
+            **s,
+            "mastery": (
+                subskill_correct.get(s["subskill_id"], 0) / 
+                subskill_total.get(s["subskill_id"], 1)
+                if subskill_total.get(s["subskill_id"], 0) > 0
+                else 0.0
+            )
+        }
+        for s in ts["topic_session"]["subskills"]
+    ]
+    
+    # Update state
+    if len(weak_subskills_set) == 0:
+        ts["topic_session"]["state"] = "final"
+    else:
+        ts["topic_session"]["state"] = "learning_session"
+    
     return ts
 
 # =========================

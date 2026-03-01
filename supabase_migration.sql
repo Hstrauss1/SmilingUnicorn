@@ -21,8 +21,7 @@ CREATE TABLE IF NOT EXISTS public.course_packs (
   roadmap_json JSONB, -- Complete topic session JSON with subskills, diagnostic, learning modules, etc.
   status TEXT DEFAULT 'in_progress' CHECK (status IN ('not_started', 'in_progress', 'completed')),
   progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- ============================================
@@ -38,8 +37,7 @@ CREATE TABLE IF NOT EXISTS public.topic_sessions (
   completion_status TEXT DEFAULT 'not_started' CHECK (completion_status IN ('not_started', 'in_progress', 'completed')),
   order_index INTEGER DEFAULT 0,
   completed_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- ============================================
@@ -53,8 +51,7 @@ CREATE TABLE IF NOT EXISTS public.subskills (
   name TEXT NOT NULL,
   mastery DECIMAL(3, 2) DEFAULT 0.0 CHECK (mastery >= 0 AND mastery <= 1),
   evidence_chunk_ids TEXT[] DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- ============================================
@@ -106,8 +103,7 @@ CREATE TABLE IF NOT EXISTS public.learning_modules (
   order_index INTEGER DEFAULT 0,
   status TEXT DEFAULT 'locked' CHECK (status IN ('locked', 'in_progress', 'completed')),
   progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- ============================================
@@ -317,26 +313,7 @@ CREATE INDEX idx_activity_logs_created_at ON public.activity_logs(created_at DES
 -- FUNCTIONS AND TRIGGERS
 -- ============================================
 
--- Update updated_at timestamp automatically
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = timezone('utc'::text, now());
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_course_packs_updated_at BEFORE UPDATE ON public.course_packs
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_topic_sessions_updated_at BEFORE UPDATE ON public.topic_sessions
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_subskills_updated_at BEFORE UPDATE ON public.subskills
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_learning_modules_updated_at BEFORE UPDATE ON public.learning_modules
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- No triggers needed for now
 
 -- ============================================
 -- SAMPLE DATA (Optional - for testing)
