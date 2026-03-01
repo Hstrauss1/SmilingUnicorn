@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getUserCoursePacks, getUserStats } from "@/lib/supabase/coursePacks";
+import { getUserCoursePacks, getUserStats, getUserCoursePacksFormatted } from "@/lib/supabase/coursePacks";
+import { loadGeneratedCoursePacks } from "@/lib/loadDiagnostics";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-// Import the generated JSON file
+// Import generated JSON files from Python state machine
 import generatedTopicSession from "@/testPy/out/topic_session_after_learning.json";
 
 export default function DashboardPage() {
@@ -21,6 +22,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [buildingDiagnostic, setBuildingDiagnostic] = useState(false);
+  const [diagnosticError, setDiagnosticError] = useState(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -35,164 +38,55 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Mock data for demonstration when database is not set up
-  const loadMockData = () => {
-    // Transform the imported JSON to match our frontend schema format
-    const generatedTopic = {
-      id: generatedTopicSession.topic_session.topic_id,
-      title: generatedTopicSession.topic_session.title,
-      state: generatedTopicSession.topic_session.state, // Use actual state from JSON
-      completion_status: "in_progress",
-      subskills: generatedTopicSession.topic_session.subskills.map(skill => ({
-        name: skill.name,
-        mastery: skill.mastery
-      })),
-      diagnostic: generatedTopicSession.topic_session.diagnostic,
-      learning_session: generatedTopicSession.topic_session.learning_session,
-      final_quiz: generatedTopicSession.topic_session.final_quiz
-    };
+  // Load data from Python-generated JSON files
+  const loadMockData = async () => {
+    try {
+      // Load all generated course packs with Python-generated diagnostics
+      const generatedPacks = await loadGeneratedCoursePacks();
+      
+      if (generatedPacks.length > 0) {
+        console.log(`Loaded ${generatedPacks.length} Python-generated course packs with diagnostics`);
+        
+        // Calculate stats from generated data
+        const totalTopics = generatedPacks.reduce((sum, pack) => sum + pack.topic_sessions.length, 0);
+        const completedTopics = generatedPacks.reduce((sum, pack) => 
+          sum + pack.topic_sessions.filter(t => t.completion_status === 'completed').length, 0
+        );
+        
+        const mockStats = {
+          totalCoursePacks: generatedPacks.length,
+          totalTopics: totalTopics,
+          completedTopics: completedTopics,
+          averageProgress: Math.round(generatedPacks.reduce((sum, pack) => sum + pack.progress, 0) / generatedPacks.length),
+          currentStreak: 0
+        };
 
-    const mockCoursePacks = [
-      {
-        id: generatedTopicSession.course_pack_id,
-        title: "Introduction to C Programming",
-        document_name: "Class6&7-Pointers_pptx.pdf",
-        progress: 45,
-        status: 'in_progress',
-        topic_sessions: [
-          generatedTopic,
-          {
-            id: 'mock-topic-1',
-            title: "Control Structures",
-            state: "completed",
-            completion_status: "completed",
-            subskills: [
-              { name: "If/Else Statements", mastery: 0.9 },
-              { name: "For/While Loops", mastery: 0.85 }
-            ]
-          },
-          {
-            id: 'mock-topic-2',
-            title: "Arrays and Memory Management",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: []
-          }
-        ]
-      },
-      {
-        id: 'mock-1',
-        title: "Machine Learning Fundamentals",
-        document_name: "ml-textbook.pdf",
-        progress: 35,
-        status: 'in_progress',
-        topic_sessions: [
-          {
-            id: 1,
-            title: "Introduction to Machine Learning",
-            state: "completed",
-            completion_status: "completed",
-            subskills: [
-              { name: "What is ML?", mastery: 0.9 },
-              { name: "Types of ML", mastery: 0.85 },
-              { name: "Applications", mastery: 0.95 }
-            ]
-          },
-          {
-            id: 2,
-            title: "Data Preprocessing",
-            state: "learning_session",
-            completion_status: "in_progress",
-            subskills: [
-              { name: "Data Cleaning", mastery: 0.7 },
-              { name: "Feature Scaling", mastery: 0.6 },
-              { name: "Data Transformation", mastery: 0.5 }
-            ]
-          },
-          {
-            id: 3,
-            title: "Supervised Learning",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: [
-              { name: "Linear Regression", mastery: 0 },
-              { name: "Classification", mastery: 0 },
-              { name: "Model Evaluation", mastery: 0 }
-            ]
-          },
-          {
-            id: 4,
-            title: "Unsupervised Learning",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: []
-          },
-          {
-            id: 5,
-            title: "Neural Networks",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: []
-          }
-        ]
-      },
-      {
-        id: 'mock-2',
-        title: "Web Development Bootcamp",
-        document_name: "web-dev-course.pdf",
-        progress: 10,
-        status: 'in_progress',
-        topic_sessions: [
-          {
-            id: 6,
-            title: "HTML & CSS Basics",
-            state: "completed",
-            completion_status: "completed",
-            subskills: [
-              { name: "HTML Tags", mastery: 0.9 },
-              { name: "CSS Styling", mastery: 0.8 },
-              { name: "Flexbox", mastery: 0.85 }
-            ]
-          },
-          {
-            id: 7,
-            title: "JavaScript Fundamentals",
-            state: "learning_session",
-            completion_status: "in_progress",
-            subskills: [
-              { name: "Variables & Types", mastery: 0.6 },
-              { name: "Functions", mastery: 0.5 },
-              { name: "DOM Manipulation", mastery: 0.3 }
-            ]
-          },
-          {
-            id: 8,
-            title: "React JS",
-            state: "diagnostic",
-            completion_status: "not_started",
-            subskills: []
-          }
-        ]
+        const mockActivity = generatedPacks.slice(0, 3).map(pack => ({
+          action: "Generated", 
+          item: pack.title, 
+          created_at: new Date().toISOString() 
+        }));
+
+        setCoursePacks(generatedPacks);
+        setSelectedPack(generatedPacks[0]);
+        setStats(mockStats);
+      } else {
+        console.warn('No Python-generated course packs found, system needs PDF uploads');
+        setCoursePacks([]);
+        setSelectedPack(null);
+        setStats({
+          totalCoursePacks: 0,
+          totalTopics: 0,
+          completedTopics: 0,
+          averageProgress: 0,
+          currentStreak: 0
+        });
       }
-    ];
-
-    const mockStats = {
-      totalCoursePacks: 3,
-      totalTopics: 11,
-      completedTopics: 3,
-      averageProgress: 22,
-      currentStreak: 3
-    };
-
-    const mockActivity = [
-      { action: "Completed", item: "Introduction to Machine Learning", created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
-      { action: "Started", item: "Data Preprocessing module", created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() },
-      { action: "Uploaded", item: "ml-textbook.pdf", created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() }
-    ];
-
-    setCoursePacks(mockCoursePacks);
-    setSelectedPack(mockCoursePacks[0]);
-    setStats(mockStats);
+    } catch (error) {
+      console.error('Error loading generated course packs:', error);
+      setCoursePacks([]);
+      setSelectedPack(null);
+    }
   };
 
   useEffect(() => {
@@ -202,26 +96,60 @@ export default function DashboardPage() {
       
       if (user) {
         try {
-          // Fetch real data from Supabase
-          const [packs, userStats, activity] = await Promise.all([
-            getUserCoursePacks(),
-            getUserStats(),
-          ]);
+          // Fetch from Supabase (formatted with roadmap_json)
+          console.log('Loading course packs from Supabase...');
+          const formattedPacks = await getUserCoursePacksFormatted();
           
-          // If no data exists yet, use mock data
-          if (!packs || packs.length === 0) {
-            loadMockData();
+          if (formattedPacks && formattedPacks.length > 0) {
+            console.log(`Loaded ${formattedPacks.length} course packs from Supabase`);
+            
+            // Calculate stats from Supabase data
+            const totalTopics = formattedPacks.reduce((sum, pack) => sum + pack.topic_sessions.length, 0);
+            const completedTopics = formattedPacks.reduce((sum, pack) => 
+              sum + pack.topic_sessions.filter(t => t.completion_status === 'completed').length, 0
+            );
+            
+            const supabaseStats = {
+              totalCoursePacks: formattedPacks.length,
+              totalTopics: totalTopics,
+              completedTopics: completedTopics,
+              averageProgress: formattedPacks.length > 0 
+                ? Math.round(formattedPacks.reduce((sum, pack) => sum + pack.progress, 0) / formattedPacks.length)
+                : 0,
+              currentStreak: 0
+            };
+
+            setCoursePacks(formattedPacks);
+            setSelectedPack(formattedPacks[0]);
+            setStats(supabaseStats);
           } else {
-            setCoursePacks(packs);
-            setStats(userStats);
-            setSelectedPack(packs[0]);
+            // No Supabase data yet
+            console.log('No course packs in Supabase yet');
+            setCoursePacks([]);
+            setSelectedPack(null);
+            setStats({
+              totalCoursePacks: 0,
+              totalTopics: 0,
+              completedTopics: 0,
+              averageProgress: 0,
+              currentStreak: 0
+            });
           }
         } catch (error) {
-          /****
-           * Remove this later! - Raph
-           */
-          loadMockData();
+          console.error('Error loading from Supabase:', error);
+          setCoursePacks([]);
+          setSelectedPack(null);
+          setStats({
+            totalCoursePacks: 0,
+            totalTopics: 0,
+            completedTopics: 0,
+            averageProgress: 0,
+            currentStreak: 0
+          });
         }
+      } else {
+        // Not logged in
+        console.log('User not authenticated');
       }
       
       setLoading(false);
@@ -255,6 +183,54 @@ export default function DashboardPage() {
     if (completionStatus === 'completed') return 'completed';
     if (state === 'learning_session' || state === 'diagnostic' || state === 'final' || state === 'final_quiz') return 'in-progress';
     return 'in-progress'; // No topics should be locked by default
+  };
+
+  const handleBuildDiagnostic = async (topic) => {
+    setBuildingDiagnostic(true);
+    setDiagnosticError(null);
+
+    try {
+      console.log(`Building diagnostic for topic ${topic.id} in course pack ${selectedPack.id}`);
+
+      const response = await fetch('/api/build-diagnostic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          coursePackId: selectedPack.id,
+          topicId: topic.id
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to build diagnostic');
+      }
+
+      console.log('Diagnostic built successfully:', data);
+
+      // Refresh the dashboard data
+      const formattedPacks = await getUserCoursePacksFormatted();
+      setCoursePacks(formattedPacks);
+      
+      // Update selected pack
+      const updatedPack = formattedPacks.find(pack => pack.id === selectedPack.id);
+      if (updatedPack) {
+        setSelectedPack(updatedPack);
+      }
+
+      // Navigate to the topic page with the diagnostic
+      router.push(`/topic/${topic.id}?packId=${selectedPack.id}`);
+
+    } catch (error) {
+      console.error('Error building diagnostic:', error);
+      setDiagnosticError(error.message);
+      alert(`Failed to build diagnostic: ${error.message}`);
+    } finally {
+      setBuildingDiagnostic(false);
+    }
   };
 
   if (loading) {
@@ -305,7 +281,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
+    <div className="min-h-screen bg-linear-to-br from-[#faf9f6] via-[#f4f1e8] to-[#e8e3d3] dark:from-[#1a1a1a] dark:via-[#2d2d2d] dark:to-[#3a3a3a]">
       <Header />
       
       <main className="pt-32 pb-20 px-6 lg:px-8">
@@ -319,7 +295,7 @@ export default function DashboardPage() {
               Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0]}! Continue your learning journey.
             </p>
           </div>
-          
+
           {/* Course Pack Selector (if multiple packs) */}
           {coursePacks.length > 1 && (
             <div className="mb-6 relative w-full md:w-96" ref={dropdownRef}>
@@ -373,7 +349,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1.5 bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-gradient-to-r from-[#c09080] to-[#d4c4dc] rounded-full" 
+                              className="h-full bg-linear-to-r from-[#c09080] to-[#d4c4dc] rounded-full" 
                               style={{ width: `${pack.progress}%` }}
                             />
                           </div>
@@ -406,7 +382,7 @@ export default function DashboardPage() {
                     </div>
                     <Link
                       href={`/roadmap?packId=${selectedPack.id}`}
-                      className="px-4 py-2 bg-gradient-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
+                      className="px-4 py-2 bg-linear-to-r from-[#c09080] to-[#d4c4dc] text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
                     >
                       View Roadmap
                     </Link>
@@ -422,7 +398,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="w-full bg-[#e8e3d3] dark:bg-[#4a4a4a] rounded-full h-3">
                       <div
-                        className="bg-gradient-to-r from-[#c09080] to-[#d4c4dc] h-3 rounded-full transition-all"
+                        className="bg-linear-to-r from-[#c09080] to-[#d4c4dc] h-3 rounded-full transition-all"
                         style={{ width: `${selectedPack.progress}%` }}
                       />
                     </div>
@@ -491,18 +467,35 @@ export default function DashboardPage() {
                           </div>
                           
                           <div className="mt-3">
-                            {/* All topics are accessible - no locked topics */}
-                            <Link
-                              href={`/topic/${topic.id}?packId=${selectedPack.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
-                                isCompleted
-                                  ? "bg-green-600 text-white hover:bg-green-700"
-                                  : "bg-blue-600 text-white hover:bg-blue-700"
-                              }`}
-                            >
-                              {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Quiz" : "▶️ Start"}
-                            </Link>
+                            {/* Show different button text based on diagnostic state */}
+                            {topic.state === 'diagnostic' && !topic.diagnostic?.questions?.length ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBuildDiagnostic(topic);
+                                }}
+                                disabled={buildingDiagnostic}
+                                className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
+                                  buildingDiagnostic
+                                    ? "bg-gray-400 text-white cursor-not-allowed"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                }`}
+                              >
+                                {buildingDiagnostic ? "⏳ Building Diagnostic..." : "🔨 Build Diagnostic"}
+                              </button>
+                            ) : (
+                              <Link
+                                href={`/topic/${topic.id}?packId=${selectedPack.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`block w-full py-2 rounded-lg font-medium transition-colors text-sm text-center ${
+                                  isCompleted
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                }`}
+                              >
+                                {isCompleted ? "📖 Review" : topic.state === 'diagnostic' ? "📝 Take Diagnostic" : topic.state === 'learning_session' ? "🔄 Continue Learning" : topic.state === 'final' || topic.state === 'final_quiz' ? "🎯 Take Final Quiz" : "▶️ Start"}
+                              </Link>
+                            )}
                           </div>
                         </div>
                       );
@@ -531,10 +524,10 @@ export default function DashboardPage() {
                     <span className="text-2xl">📤</span>
                     <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">Upload New Document</span>
                   </Link>
-                  <button className="w-full flex items-center gap-3 p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] transition-colors">
+                  {/* <button className="w-full flex items-center gap-3 p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] transition-colors">
                     <span className="text-2xl">📊</span>
                     <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">View Analytics</span>
-                  </button>
+                  </button> */}
                   <button className="w-full flex items-center gap-3 p-3 bg-[#e8e3d3] dark:bg-[#3a3a3a] rounded-lg hover:bg-[#f4f1e8] dark:hover:bg-[#4a4a4a] transition-colors">
                     <span className="text-2xl">⚙️</span>
                     <span className="font-medium text-[#2d2d2d] dark:text-[#e8e3d3] text-sm">Settings</span>
@@ -543,7 +536,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Learning Tip */}
-              <div className="bg-gradient-to-br from-[#f5d5cb] to-[#e8d5e8] dark:from-[#5a4a45] dark:to-[#5a4a60] rounded-2xl p-6 border border-[#d4c4dc] dark:border-[#6a5a70] shadow-sm">
+              <div className="bg-linear-to-br from-[#f5d5cb] to-[#e8d5e8] dark:from-[#5a4a45] dark:to-[#5a4a60] rounded-2xl p-6 border border-[#d4c4dc] dark:border-[#6a5a70] shadow-sm">
                 <h3 className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3d3] mb-2">
                   💡 Learning Tip
                 </h3>

@@ -41,10 +41,10 @@ export default function Header() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-10 h-10 bg-gradient-to-br from-[#c09080] to-[#d4c4dc] rounded-lg flex items-center justify-center shadow-sm">
-                <span className="text-white font-bold text-xl">LP</span>
+                <span className="text-white font-bold text-xl">OE</span>
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-[#c09080] to-[#d4c4dc] bg-clip-text text-transparent">
-                LearnPath AI
+                OpenEducation
               </span>
             </Link>
           </div>

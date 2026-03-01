@@ -5,171 +5,79 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/client";
-import generatedTopicSession from "@/testPy/out/topic_session_after_learning.json";
+import { loadGeneratedCoursePacks } from "@/lib/loadDiagnostics";
+import { getUserCoursePacksFormatted } from "@/lib/supabase/coursePacks";
 
 function RoadmapContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
-  const packId = searchParams.get('packId') || 'mock-1'; // Default to mock-1 for now if not provided
+  const packId = searchParams.get('packId');
   
   const [loading, setLoading] = useState(true);
   const [coursePack, setCoursePack] = useState(null);
 
   useEffect(() => {
-    // In the future this will be fetched via:
-    // const packData = await getCoursePackById(packId);
-    
-    // For now we simulate fetching the course pack based on ID
     const loadData = async () => {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        let mockData;
-
-        if (packId === generatedTopicSession.course_pack_id) {
-          const generatedTopic = {
-            id: generatedTopicSession.topic_session.topic_id,
-            title: generatedTopicSession.topic_session.title,
-            state: generatedTopicSession.topic_session.state, // Use actual state from JSON
-            completion_status: "in_progress",
-            subskills: generatedTopicSession.topic_session.subskills.map(skill => ({
-              name: skill.name,
-              mastery: skill.mastery
-            }))
-          };
-
-          mockData = {
-            id: generatedTopicSession.course_pack_id,
-            title: "Introduction to C Programming",
-            document_name: "Class6&7-Pointers_pptx.pdf",
-            progress: 15,
-            status: 'in_progress',
-            topic_sessions: [
-              generatedTopic,
-              {
-                id: 'mock-topic-1',
-                title: "Control Structures",
-                state: "completed",
-                completion_status: "completed",
-                subskills: [
-                  { name: "If/Else Statements", mastery: 0.9 },
-                  { name: "For/While Loops", mastery: 0.85 }
-                ]
-              },
-              {
-                id: 'mock-topic-2',
-                title: "Arrays and Pointers",
-                state: "diagnostic",
-                completion_status: "not_started",
-                subskills: []
-              }
-            ]
-          };
-        } else if (packId === 'mock-2') {
-          mockData = {
-            id: 'mock-2',
-            title: "Web Development Bootcamp",
-            document_name: "web-dev-course.pdf",
-            progress: 10,
-            status: 'in_progress',
-            topic_sessions: [
-              {
-                id: 6,
-                title: "HTML & CSS Basics",
-                state: "completed",
-                completion_status: "completed",
-                subskills: [
-                  { name: "HTML Tags", mastery: 0.9 },
-                  { name: "CSS Styling", mastery: 0.8 },
-                  { name: "Flexbox", mastery: 0.85 }
-                ]
-              },
-              {
-                id: 7,
-                title: "JavaScript Fundamentals",
-                state: "learning_session",
-                completion_status: "in_progress",
-                subskills: [
-                  { name: "Variables & Types", mastery: 0.6 },
-                  { name: "Functions", mastery: 0.5 },
-                  { name: "DOM Manipulation", mastery: 0.3 }
-                ]
-              },
-              {
-                id: 8,
-                title: "React JS",
-                state: "diagnostic",
-                completion_status: "not_started",
-                subskills: []
-              }
-            ]
-          };
-        } else {
-          mockData = {
-            id: packId,
-            title: "Machine Learning Fundamentals",
-            document_name: "ml-textbook.pdf",
-            progress: 35,
-            status: 'in_progress',
-            topic_sessions: [
-              {
-                id: 1,
-                title: "Introduction to Machine Learning",
-                state: "completed",
-                completion_status: "completed",
-                subskills: [
-                  { name: "What is ML?", mastery: 0.9 },
-                  { name: "Types of ML", mastery: 0.85 },
-                  { name: "Applications", mastery: 0.95 }
-                ]
-              },
-              {
-                id: 2,
-                title: "Data Preprocessing",
-                state: "learning_session",
-                completion_status: "in_progress",
-                subskills: [
-                  { name: "Data Cleaning", mastery: 0.7 },
-                  { name: "Feature Scaling", mastery: 0.6 },
-                  { name: "Data Transformation", mastery: 0.5 }
-                ]
-              },
-              {
-                id: 3,
-                title: "Supervised Learning",
-                state: "diagnostic",
-                completion_status: "not_started",
-                subskills: [
-                  { name: "Linear Regression", mastery: 0 },
-                  { name: "Classification", mastery: 0 },
-                  { name: "Model Evaluation", mastery: 0 }
-                ]
-              },
-              {
-                id: 4,
-                title: "Unsupervised Learning",
-                state: "diagnostic",
-                completion_status: "not_started",
-                subskills: []
-              },
-              {
-                id: 5,
-                title: "Neural Networks",
-                state: "diagnostic",
-                completion_status: "not_started",
-                subskills: []
-              }
-            ]
-          };
-        }
+      
+      try {
+        // First try to load from Supabase
+        console.log('Loading roadmap from Supabase for packId:', packId);
+        const supabasePacks = await getUserCoursePacksFormatted();
         
-        setCoursePack(mockData);
+        // Find the course pack matching the packId
+        let pack = supabasePacks.find(p => p.id === packId);
+        
+        if (pack) {
+          console.log('Found course pack in Supabase:', pack.title);
+          setCoursePack(pack);
+        } else {
+          // Fall back to generated files
+          console.log('Course pack not in Supabase, checking generated files...');
+          const generatedPacks = await loadGeneratedCoursePacks();
+          pack = generatedPacks.find(p => p.id === packId);
+          
+          if (pack) {
+            console.log('Found course pack in generated files:', pack.title);
+            setCoursePack(pack);
+          } else {
+            console.error('Course pack not found:', packId);
+            setCoursePack(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading course pack:', error);
+        // Try fallback to generated files
+        try {
+          const generatedPacks = await loadGeneratedCoursePacks();
+          const pack = generatedPacks.find(p => p.id === packId);
+          if (pack) {
+            setCoursePack(pack);
+          } else {
+            setCoursePack(null);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+          setCoursePack(null);
+        }
+      } finally {
         setLoading(false);
-      }, 500);
+      }
     };
 
-    loadData();
+    if (packId) {
+      loadData();
+    } else {
+      setLoading(false);
+      setCoursePack(null);
+    }
+    if (packId) {
+      loadData();
+    } else {
+      setLoading(false);
+      setCoursePack(null);
+    }
   }, [packId]);
 
   if (loading) {
@@ -248,7 +156,7 @@ function RoadmapContent() {
               const isLocked = false;
               
               let statusColor = "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600";
-              let statusIcon = "�"; // Default icon for not started
+              let statusIcon = "🔔"; // Default icon for not started
               
               if (isCompleted) {
                 statusColor = "bg-green-100 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-400";

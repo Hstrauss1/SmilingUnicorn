@@ -29,7 +29,6 @@ export async function createCoursePack(coursePackData) {
       status: 'in_progress',
       progress: 0,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
     })
     .select()
     .single();
@@ -60,6 +59,74 @@ export async function getUserCoursePacks() {
 
   if (error) throw error;
   return data || [];
+}
+
+/**
+ * Get all course packs for the current user with formatted data
+ * Reads from the course_packs JSONB array
+ */
+export async function getUserCoursePacksFormatted() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('course_packs')
+    .select('course_packs')
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No row exists yet for this user
+      return [];
+    }
+    throw error;
+  }
+  
+  if (!data || !data.course_packs) return [];
+
+  // The course_packs column is already a JSONB array of course packs
+  const coursePacksArray = data.course_packs;
+
+  // Transform each course pack into dashboard format
+  return coursePacksArray.map(pack => {
+    const topicSession = pack.topic_session;
+    
+    if (!topicSession) {
+      console.warn(`Course pack ${pack.course_pack_id} has no topic session`);
+      return null;
+    }
+
+    // Create topic session object
+    const topic = {
+      id: topicSession.topic_id,
+      title: topicSession.title,
+      state: topicSession.state,
+      completion_status: topicSession.completion?.status || "not_started",
+      subskills: (topicSession.subskills || []).map(skill => ({
+        id: skill.subskill_id,
+        name: skill.name,
+        mastery: skill.mastery || 0
+      })),
+      diagnostic: topicSession.diagnostic,
+      learning_session: topicSession.learning_session,
+      final_quiz: topicSession.final_quiz
+    };
+
+    // Return formatted course pack
+    return {
+      id: pack.course_pack_id,
+      title: pack.title,
+      document_name: pack.document_name,
+      progress: pack.progress || 0,
+      status: pack.status || 'in_progress',
+      topic_sessions: [topic],
+      created_at: pack.created_at,
+      updated_at: pack.updated_at
+    };
+  }).filter(pack => pack !== null); // Remove any invalid packs
 }
 
 /**
@@ -279,6 +346,125 @@ export async function submitDiagnosticAnswers(sessionId, answers) {
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * Update diagnostic for a course pack in the JSONB array
+ */
+export async function updateCoursePackDiagnostic(coursePackId, diagnostic) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User not authenticated');
+
+  // Fetch current course_packs array
+  const { data: currentData, error: fetchError } = await supabase
+    .from('course_packs')
+    .select('course_packs')
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError) throw fetchError;
+  if (!currentData) throw new Error('No course packs found');
+
+  // Update the specific course pack with new diagnostic
+  const updatedCoursePacks = currentData.course_packs.map(pack => {
+    if (pack.course_pack_id === coursePackId) {
+      return {
+        ...pack,
+        topic_session: {
+          ...pack.topic_session,
+          diagnostic: diagnostic,
+          state: 'diagnostic'
+        }
+      };
+    }
+    return pack;
+  });
+
+  // Save back to Supabase
+  const { error: updateError } = await supabase
+    .from('course_packs')
+    .update({ 
+      course_packs: updatedCoursePacks
+    })
+    .eq('user_id', user.id);
+
+  if (updateError) throw updateError;
+
+  return { success: true };
+}
+
+/**
+ * Update topic session state in the JSONB array
+ */
+export async function updateTopicSessionInCoursePack(coursePackId, topicId, updates) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User not authenticated');
+
+  // Fetch current course_packs array
+  const { data: currentData, error: fetchError } = await supabase
+    .from('course_packs')
+    .select('course_packs')
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError) throw fetchError;
+  if (!currentData) throw new Error('No course packs found');
+
+  // Update the specific course pack's topic session
+  const updatedCoursePacks = currentData.course_packs.map(pack => {
+    if (pack.course_pack_id === coursePackId) {
+      return {
+        ...pack,
+        topic_session: {
+          ...pack.topic_session,
+          ...updates
+        }
+      };
+    }
+    return pack;
+  });
+
+  // Save back to Supabase
+  const { error: updateError } = await supabase
+    .from('course_packs')
+    .update({ 
+      course_packs: updatedCoursePacks
+    })
+    .eq('user_id', user.id);
+
+  if (updateError) throw updateError;
+
+  return { success: true };
+}
+
+/**
+ * Get a specific course pack by ID from the JSONB array
+ */
+export async function getCoursePackByIdFromArray(coursePackId) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('course_packs')
+    .select('course_packs')
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) throw error;
+  if (!data || !data.course_packs) return null;
+
+  // Find the specific course pack
+  const coursePack = data.course_packs.find(
+    pack => pack.course_pack_id === coursePackId
+  );
+
+  return coursePack || null;
 }
 
 // ============================================
