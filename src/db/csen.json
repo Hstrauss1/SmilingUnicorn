@@ -1,0 +1,118 @@
+{
+    "course_pack_id": "string",
+    "topic_session": {
+      "topic_id": "string",
+      "title": "string",
+      "state": "diagnostic",
+      "prereq_topic_ids": ["string"],
+  
+      "subskills": [
+        {
+          "subskill_id": "string",
+          "name": "string",
+          "mastery": 0.0,
+          "evidence_chunk_ids": ["string"]
+        }
+      ],
+  
+      "diagnostic": {
+        "quiz_id": "string",
+        "questions": [
+          {
+            "question_id": "string",
+            "subskill_id": "string",
+            "type": "mcq",
+            "difficulty": 1,
+            "prompt": "string",
+            "choices": ["string"],
+            "correct_answer": "string",
+            "rubric": ["string"]
+          }
+        ],
+        "submission": {
+          "answers": [
+            {
+              "question_id": "string",
+              "answer": "string"
+            }
+          ],
+          "score": {
+            "num_correct": 0,
+            "num_total": 0,
+            "percent": 0.0
+          },
+          "analysis": {
+            "per_question": [
+              {
+                "question_id": "string",
+                "is_correct": true,
+                "error_type": "misconception",
+                "confidence": 0.0,
+                "notes": "string"
+              }
+            ],
+            "weak_subskills": ["string"],
+            "suspected_prereq_topics": ["string"]
+          }
+        }
+      },
+  
+      "learning_session": {
+        "active_modules": [
+          {
+            "module_id": "string",
+            "subskill_id": "string",
+            "title": "string",
+            "explanation": "string",
+            "worked_example": {
+              "prompt": "string",
+              "solution": "string"
+            },
+            "quick_check": {
+              "question_id": "string",
+              "type": "mcq",
+              "prompt": "string",
+              "choices": ["string"],
+              "correct_answer": "string"
+            },
+            "evidence_chunk_ids": ["string"]
+          }
+        ]
+      },
+  
+      "final_quiz": {
+        "quiz_id": "string",
+        "questions": [
+          {
+            "question_id": "string",
+            "subskill_id": "string",
+            "type": "mcq",
+            "difficulty": 2,
+            "prompt": "string",
+            "choices": ["string"],
+            "correct_answer": "string"
+          }
+        ],
+        "submission": {
+          "answers": [
+            {
+              "question_id": "string",
+              "answer": "string"
+            }
+          ],
+          "score": {
+            "num_correct": 0,
+            "num_total": 0,
+            "percent": 0.0
+          },
+          "passed": true,
+          "weak_subskills": ["string"]
+        }
+      },
+  
+      "completion": {
+        "status": "in_progress",
+        "completed_at": "string"
+      }
+    }
+  }
