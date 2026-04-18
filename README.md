@@ -1,10 +1,10 @@
-# SmilingUnicorn - Adaptive Learning Platform
+# OpenEducation - Adaptive Learning Platform
 
 An AI-powered tutoring platform built with Next.js and Supabase that generates personalized learning experiences from PDF course materials.
 
 ## Overview
 
-SmilingUnicorn is an intelligent tutoring system that:
+OpenEducation is an intelligent tutoring system that:
 - Processes PDF course materials to generate diagnostic quizzes
 - Uses AI to generate personalized learning modules and discussions
 - Provides voice-enabled AI tutoring via ElevenLabs integration
